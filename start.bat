@@ -13,11 +13,11 @@ timeout /t 2 /nobreak >nul
 
 echo [Dekho] Starting backend on 127.0.0.1:8000...
 cd /d "%~dp0backend"
-start "Dekho Backend" cmd /k "python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
+start "Dekho Backend" cmd /k ".\venv\Scripts\python -m uvicorn app.main:app --host 127.0.0.1 --port 8000"
 
 echo [Dekho] Starting ML Service on 127.0.0.1:8001...
 cd /d "%~dp0ml_service"
-start "Dekho ML Service" cmd /k "python main.py"
+start "Dekho ML Service" cmd /k "..\backend\venv\Scripts\python main.py"
 
 echo [Dekho] Starting frontend on port 5173...
 cd /d "%~dp0frontend"

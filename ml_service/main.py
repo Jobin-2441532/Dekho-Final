@@ -31,8 +31,7 @@ from typing import Optional, List, Dict, Any
 from pathlib import Path
 from urllib.parse import urlparse
 
-import psycopg2
-import psycopg2.extras
+import sqlite3
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -50,9 +49,12 @@ logger = logging.getLogger("dekho.ml")
 _DB_URL = os.getenv("DATABASE_URL", "postgresql://dekho:dekho_password@localhost:5432/dekho_db")
 
 def get_conn():
-    """Return a psycopg2 connection using DATABASE_URL from environment."""
     try:
-        conn = psycopg2.connect(_DB_URL)
+        import os
+        db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend", "dekho.db"))
+        import sqlite3
+        conn = sqlite3.connect(db_path, timeout=5)
+        conn.row_factory = sqlite3.Row
         return conn
     except Exception as e:
         raise HTTPException(503, f"Database connection failed: {e}")
@@ -328,9 +330,9 @@ def sms_ingest(req: SMSIngestRequest):
                  category, sub_category, payment_mode, vpa,
                  confidence, raw_sms, review_status, source_type,
                  is_income, is_refund, created_at, updated_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'sms',
-                    %s, %s, NOW(), NOW())
-            RETURNING id
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sms',
+                    ?, ?, datetime('now'), datetime('now'))
+
         """, (
             req.user_id,
             result["date"],
@@ -347,7 +349,7 @@ def sms_ingest(req: SMSIngestRequest):
             result["direction"] == "credit",   # is_income (bool)
             result["category"] == "Refund",     # is_refund (bool)
         ))
-        tx_id = cur.fetchone()[0]  # RETURNING id
+        tx_id = cur.lastrowid
         conn.commit()
         conn.close()
         result["id"] = tx_id
@@ -369,11 +371,11 @@ def monthly_summary(
     month_str = f"{year}-{month:02d}"
     try:
         conn = get_conn()
-        cur = conn.cursor(psycopg2.extras.RealDictCursor)
+        cur = conn.cursor()
         cur.execute("""
             SELECT direction, category, amount
             FROM transactions
-            WHERE user_id = %s AND to_char(date::date, 'YYYY-MM') = %s
+            WHERE user_id = ? AND strftime('%Y-%m', date) = ?
         """, (user_id, month_str))
         rows = cur.fetchall()
         conn.close()
@@ -408,11 +410,11 @@ def recurring_transactions(user_id: int = Query(...)):
     """Detect recurring/subscription transactions based on merchant frequency."""
     try:
         conn = get_conn()
-        cur = conn.cursor(psycopg2.extras.RealDictCursor)
+        cur = conn.cursor()
         cur.execute("""
             SELECT merchant, category, amount, date
             FROM transactions
-            WHERE user_id = %s AND direction = 'debit'
+            WHERE user_id = ? AND direction = 'debit'
             ORDER BY merchant, date
         """, (user_id,))
         rows = cur.fetchall()
@@ -448,12 +450,12 @@ def top_merchants(user_id: int = Query(...), month: int = Query(default=date.tod
     month_str = f"{year}-{month:02d}"
     try:
         conn = get_conn()
-        cur = conn.cursor(psycopg2.extras.RealDictCursor)
+        cur = conn.cursor()
         cur.execute("""
             SELECT merchant, SUM(amount) as total, COUNT(*) as txn_count
             FROM transactions
-            WHERE user_id = %s AND direction = 'debit'
-              AND to_char(date::date, 'YYYY-MM') = %s
+            WHERE user_id = ? AND direction = 'debit'
+              AND strftime('%Y-%m', date) = ?
             GROUP BY merchant
             ORDER BY total DESC
             LIMIT 8
@@ -497,10 +499,10 @@ def cashback_savings(user_id: int = Query(...)):
     """Simple cashback tracking placeholder."""
     try:
         conn = get_conn()
-        cur = conn.cursor(psycopg2.extras.RealDictCursor)
+        cur = conn.cursor()
         cur.execute("""
             SELECT SUM(amount) as total FROM transactions
-            WHERE user_id = %s AND direction = 'credit'
+            WHERE user_id = ? AND direction = 'credit'
             AND (category = 'Refund' OR lower(merchant) LIKE '%cashback%' OR lower(merchant) LIKE '%refund%')
         """, (user_id,))
         row = cur.fetchone()
@@ -519,8 +521,8 @@ def feedback_correct(req: FeedbackRequest):
         cur = conn.cursor()
         cur.execute("""
             UPDATE transactions
-            SET category = %s, sub_category = %s, review_status = 'approved'
-            WHERE id = %s AND user_id = %s
+            SET category = ?, sub_category = ?, review_status = 'approved'
+            WHERE id = ? AND user_id = ?
         """, (req.category, req.sub_category, req.transaction_id, req.user_id))
         conn.commit()
         conn.close()
@@ -534,15 +536,15 @@ def review_queue(user_id: int = Query(...), limit: int = Query(default=20)):
     """Transactions flagged for user review (low ML confidence)."""
     try:
         conn = get_conn()
-        cur = conn.cursor(psycopg2.extras.RealDictCursor)
+        cur = conn.cursor()
         cur.execute("""
             SELECT id, date, merchant, amount, direction,
                    category, sub_category, payment_mode, vpa,
                    confidence, raw_sms, review_status
             FROM transactions
-            WHERE user_id = %s AND review_status = 'needs_review'
+            WHERE user_id = ? AND review_status = 'needs_review'
             ORDER BY date DESC
-            LIMIT %s
+            LIMIT ?
         """, (user_id, limit))
         rows = cur.fetchall()
         conn.close()
@@ -557,11 +559,11 @@ def spending_pattern(user_id: int):
     """Return ML-computed spending pattern for the user."""
     try:
         conn = get_conn()
-        cur = conn.cursor(psycopg2.extras.RealDictCursor)
+        cur = conn.cursor()
         cur.execute("""
             SELECT category, SUM(amount) as total, COUNT(*) as count
             FROM transactions
-            WHERE user_id = %s AND direction = 'debit'
+            WHERE user_id = ? AND direction = 'debit'
             GROUP BY category
             ORDER BY total DESC
         """, (user_id,))
