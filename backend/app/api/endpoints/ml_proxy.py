@@ -155,18 +155,51 @@ class ClassifyRequest(BaseModel):
 async def ml_classify(
     body: ClassifyRequest,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     Classify a single SMS / transaction description through the ML HybridClassifier.
     Returns: { category, sub_category, confidence, merchant, amount, tx_type }
     """
-    return await _ml_post(
+    from app.models import Transaction
+    
+    result = await _ml_post(
         "/api/sms/ingest",
         {
             "user_id": current_user.id,
             "sms_text": body.sms_text,
         },
     )
+    
+    if "error" in result:
+        raise HTTPException(422, result.get("error"))
+        
+    if "amount" in result and result.get("direction"):
+        review_status = "needs_review" if result.get("needs_review") else "auto_approved"
+        
+        tx = Transaction(
+            user_id=current_user.id,
+            amount=result["amount"],
+            merchant=result["merchant"],
+            category=result["category"],
+            sub_category=result.get("sub_category", "General"),
+            date=result["date"],
+            direction=result["direction"],
+            payment_mode=result.get("payment_mode", "Cash"),
+            vpa=result.get("vpa"),
+            confidence=result.get("confidence", 1.0),
+            raw_sms=result.get("raw_sms", body.sms_text),
+            review_status=review_status,
+            source_type="sms",
+            is_income=(result["direction"] == "credit"),
+            is_refund=(result["category"] == "Refund")
+        )
+        db.add(tx)
+        db.commit()
+        db.refresh(tx)
+        result["id"] = f"t{tx.id}"
+        
+    return result
 
 
 # ---------------------------------------------------------------------------
