@@ -87,6 +87,8 @@ SMS_PATTERNS = [
     {"regex": r"debited\s+(?:by|with|of)?\s*(?:rs\.?|inr\.?|₹)?\s*([\d,]+\.?\d*)",     "direction": "debit"},
     {"regex": r"(?:spent|paid|sent|transferred)\s+(?:to|for)?\s*(?:rs\.?|inr\.?|₹)\s*([\d,]+\.?\d*)", "direction": "debit"},
     {"regex": r"(?:amount|amt)\s+of\s+(?:inr|rs\.?|₹)\s*([\d,]+\.?\d*)\s+(?:spent|debited|paid|transferred)", "direction": "debit"},
+    {"regex": r"([\d,]+\.?\d*)\s+(?:debited|spent|paid|sent)", "direction": "debit"},
+    {"regex": r"spent\s+(?:rs\.?|inr\.?|₹)?\s*([\d,]+\.?\d*)", "direction": "debit"},
     # Credit patterns
     {"regex": r"(?:rs\.?|inr\.?|₹)\s*([\d,]+\.?\d*)\s+(?:credited|received)",                       "direction": "credit"},
     {"regex": r"credited\s+(?:by|with|of)?\s*(?:rs\.?|inr\.?|₹)?\s*([\d,]+\.?\d*)",   "direction": "credit"},
