@@ -98,7 +98,7 @@ def read_root():
     return {"status": "ok", "message": "Welcome to Ask Dekho API", "version": "0.1.0"}
 
 
-@app.get("/health", tags=["health"])
+@app.api_route("/health", methods=["GET", "HEAD"], tags=["health"])
 async def health(db: Session = Depends(get_db)):
     """Enhanced health check — reports status of all backend services including DB."""
     db_status = "ok"
