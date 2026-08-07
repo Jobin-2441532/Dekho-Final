@@ -73,7 +73,7 @@
 
 /* ── Hero Card ── */
 .heroCard {
-  background: var(--color-primary);
+  background: #5A3825;
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   display: flex;

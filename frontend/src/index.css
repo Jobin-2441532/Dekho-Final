@@ -15,13 +15,13 @@
   --bg-card:               #FFFFFF;  /* primary cards */
   --bg-dim:                #DFD9D3;  /* dimmed overlay */
 
-  /* ── Brand / Primary ── */
-  --color-primary:         #6C482D;
-  --color-primary-mid:     #876043;
-  --color-primary-light:   #EEBC9A;
+  /* 🤎 Brand / Primary 🤎 */
+  --color-primary:         #493021;
+  --color-primary-mid:     #5e3c28;
+  --color-primary-light:   #8a6045;
   --color-primary-fixed:   #FFDCC5;
   --color-on-primary:      #FFFFFF;
-  --color-primary-gradient: linear-gradient(135deg, #6C482D 0%, #876043 100%);
+  --color-primary-gradient: linear-gradient(135deg, #493021 0%, #5e3c28 100%);
 
   /* ── Secondary ── */
   --color-secondary:       #805533;

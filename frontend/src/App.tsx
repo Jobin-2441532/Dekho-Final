@@ -17,6 +17,7 @@ const Behavior     = lazy(() => import('./pages/Behavior'))
 /* ── Transaction pages ── */
 const ReviewQueue      = lazy(() => import('./pages/ReviewQueue'))
 const TransactionsList = lazy(() => import('./pages/TransactionsList'))
+const AddExpense       = lazy(() => import('./pages/AddExpense'))
 
 /* ── Asset sub-pages ── */
 const InvestmentsDetail = lazy(() => import('./pages/InvestmentsDetail'))
@@ -112,6 +113,9 @@ export default function App() {
 
                     {/* ── Goals (standalone) ── */}
                     <Route path="/goals"        element={<Goals />} />
+                    
+                    {/* ── Add Expense (standalone) ── */}
+                    <Route path="/add-expense"  element={<AddExpense />} />
 
                     {/* ── Assets sub-pages ── */}
                     <Route path="/assets/investments"             element={<InvestmentsDetail />} />

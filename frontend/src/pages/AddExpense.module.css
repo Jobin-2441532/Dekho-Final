@@ -1,0 +1,469 @@
+.page {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  background-color: #FAF5F0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #1c1c1c;
+}
+
+/* Header */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+}
+
+.iconBtn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #1c1c1c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Scrollable Content Area */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Amount Container */
+.amountContainer {
+  background-color: #EBE4DB;
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.amountLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8c827a;
+  letter-spacing: 0.5px;
+}
+
+.amountValueRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.amountValue {
+  font-size: 36px;
+  font-weight: 500;
+  color: #1c1c1c;
+}
+
+.calcIcon {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b6058;
+}
+
+/* Form Row (Account & Category, Date & Time) */
+.formRow {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.selectBox {
+  flex: 1;
+  border: 1px solid #e1d8cd;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: transparent;
+}
+
+.selectIcon {
+  color: #8c827a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.selectContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selectLabel {
+  font-size: 11px;
+  color: #8c827a;
+}
+
+.selectValue {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1c1c1c;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Date and Time (shares selectBox styles but with native inputs hidden over them) */
+.dateTimeBox {
+  flex: 1;
+  border: 1px solid #e1d8cd;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: transparent;
+  position: relative;
+}
+
+.dateTimeBox input[type="date"],
+.dateTimeBox input[type="time"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.divider {
+  width: 1px;
+  background-color: #e1d8cd;
+  height: 40px;
+  margin: auto 0;
+}
+
+/* Quick Categories */
+.quickCategoriesRow {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none; /* Firefox */
+}
+.quickCategoriesRow::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+.quickCategoryBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #e1d8cd;
+  border-radius: 12px;
+  padding: 10px 0;
+  min-width: 80px;
+  flex: 1;
+  background-color: transparent;
+}
+
+.quickCategoryBtn img {
+  width: 24px;
+  height: 24px;
+}
+
+.quickCategoryLabel {
+  font-size: 10px;
+  color: #8c827a;
+}
+
+/* Notes Textarea */
+.notesContainer {
+  border: 1px solid #e1d8cd;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
+  min-height: 100px;
+}
+
+.notesHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #8c827a;
+}
+
+.notesInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  resize: none;
+  font-size: 14px;
+  color: #1c1c1c;
+  outline: none;
+  font-family: inherit;
+}
+.notesInput::placeholder {
+  color: #8c827a;
+}
+
+.charCount {
+  align-self: flex-end;
+  font-size: 10px;
+  color: #8c827a;
+}
+
+/* Numpad */
+.numpadContainer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px;
+  margin-top: auto; /* push to bottom */
+}
+
+.numBtn {
+  background-color: #EBE4DB;
+  border: none;
+  border-radius: 12px;
+  height: 56px;
+  font-size: 20px;
+  font-weight: 400;
+  color: #1c1c1c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.numBtn:active {
+  opacity: 0.7;
+}
+
+.brownBtn {
+  background-color: #6B4C3A;
+  color: #ffffff;
+}
+
+/* Bottom Sheet General */
+.sheetOverlay {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.sheetContent {
+  background-color: #FAF5F0;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  padding: 24px 20px;
+  padding-bottom: 40px; /* extra safe area */
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.sheetTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1c1c1c;
+}
+
+.sheetClose {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #8c827a;
+}
+
+.sheetList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.sheetItem {
+  border: 1px solid #e1d8cd;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  color: #1c1c1c;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: transparent;
+  text-align: left;
+}
+
+.sheetSubhead {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8c827a;
+  letter-spacing: 0.5px;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.customCategoryContainer {
+  background-color: transparent;
+  border: 1px solid #e1d8cd;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.customCatHeader {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1c1c1c;
+  letter-spacing: 0.5px;
+}
+
+.customCatInput {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e1d8cd;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #1c1c1c;
+  outline: none;
+  box-sizing: border-box;
+}
+.customCatInput::placeholder {
+  color: #8c827a;
+}
+
+.customCatSectionLabel {
+  font-size: 11px;
+  color: #8c827a;
+  margin-top: 4px;
+}
+
+.customCatPills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.customCatPill {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid #e1d8cd;
+  background-color: transparent;
+  color: #1c1c1c;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.customCatPillActive {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: none;
+  background-color: #6B4C3A;
+  color: #ffffff;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.customCatActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.customCatCancel {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #e1d8cd;
+  background-color: transparent;
+  color: #1c1c1c;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.customCatAdd {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  background-color: #6B4C3A;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.addCustomCategoryBtn {
+  border: 1px dashed #C8977E;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B4C3A;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  cursor: pointer;
+}

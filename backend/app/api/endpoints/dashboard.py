@@ -320,6 +320,354 @@ def update_budget(
 
 
 # ---------------------------------------------------------------------------
+# Budgets (New Module)
+# ---------------------------------------------------------------------------
+from app.models.financial import Budget
+
+DEFAULT_BUDGET_SEED = [
+    ("Essentials", "Housing & Household|🏠"),
+    ("Essentials", "Utilities|⚡"),
+    ("Essentials", "Bills|🧾"),
+    ("Essentials", "Food & Dining|🍴"),
+    ("Essentials", "Groceries|🛒"),
+    ("Essentials", "Transport|🚗"),
+    ("Essentials", "Health|💊"),
+    ("Essentials", "Personal Care|🧴"),
+    ("Essentials", "Insurance|🛡️"),
+    ("Essentials", "Loan EMI|💳"),
+    ("Essentials", "Credit Card|💳"),
+    ("Lifestyle", "Shopping|🛍️"),
+    ("Lifestyle", "Entertainment|🎬"),
+    ("Lifestyle", "Travel|✈️"),
+    ("Lifestyle", "Subscriptions|📺"),
+    ("Lifestyle", "Telecom|📱"),
+    ("Future-oriented", "Investment|💰"),
+    ("Buffer", "Others|🔮"),
+    ("Buffer", "Services|🛠️"),
+    ("Buffer", "Uncategorised|❓")
+]
+
+SECTION_SUBTITLES = {
+    "Essentials": "NON-NEGOTIABLE",
+    "Lifestyle": "FLEXIBLE",
+    "Future-oriented": "GOALS",
+    "Buffer": "FLEXIBILITY"
+}
+
+@router.get("/budgets")
+def get_budgets(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    from datetime import datetime
+    import calendar
+    
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    # 1. Fetch budgets for the month
+    budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == current_month).all()
+    
+    # 2. Seed defaults if empty
+    if not budgets:
+        for section, category in DEFAULT_BUDGET_SEED:
+            b = Budget(user_id=current_user.id, section=section, category=category, monthly_limit=0.0, month=current_month)
+            db.add(b)
+        db.commit()
+        budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == current_month).all()
+
+    # 3. Calculate Spend (Debits in current month)
+    # Using python to filter if SQLite date queries are tricky, but date.startswith works for ISO strings.
+    spend_query = (
+        db.query(Transaction.category, func.sum(Transaction.amount).label("total"))
+        .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
+        .filter(Transaction.date.like(f"{current_month}%"))
+        .group_by(Transaction.category)
+        .all()
+    )
+    spend_map = {row.category: row.total for row in spend_query}
+    
+    # 4. Map to sections
+    sections_map = {
+        "Essentials": {"label": "Essentials", "subtitle": SECTION_SUBTITLES["Essentials"], "spent": 0, "budget": 0, "subcategories": []},
+        "Lifestyle": {"label": "Lifestyle", "subtitle": SECTION_SUBTITLES["Lifestyle"], "spent": 0, "budget": 0, "subcategories": []},
+        "Future-oriented": {"label": "Future-oriented", "subtitle": SECTION_SUBTITLES["Future-oriented"], "spent": 0, "budget": 0, "subcategories": []},
+        "Buffer": {"label": "Buffer", "subtitle": SECTION_SUBTITLES["Buffer"], "spent": 0, "budget": 0, "subcategories": []}
+    }
+    
+    mapped_categories = set()
+
+    for b in budgets:
+        # category is "Label|Emoji"
+        parts = b.category.split("|")
+        label = parts[0]
+        emoji = parts[1] if len(parts) > 1 else "📊"
+        
+        # Fuzzy match / exact match logic simplified (assuming exact for MVP, or match label)
+        # Check if we have spend for this label
+        spent_amt = 0
+        for tx_cat, total_amt in list(spend_map.items()):
+            if tx_cat == label or (label == "Housing & Household" and tx_cat in ["Housing", "Household"]):
+                spent_amt += total_amt
+                mapped_categories.add(tx_cat)
+                
+        sub = {
+            "label": label,
+            "emoji": emoji,
+            "amount": spent_amt,
+            "budget": b.monthly_limit,
+            "match": [label]
+        }
+        
+        if b.section in sections_map:
+            sections_map[b.section]["subcategories"].append(sub)
+            sections_map[b.section]["budget"] += b.monthly_limit
+            sections_map[b.section]["spent"] += spent_amt
+
+    # 5. Handle Uncategorised / Remaining Spend (dump to Buffer)
+    for tx_cat, total_amt in spend_map.items():
+        if tx_cat not in mapped_categories:
+            sections_map["Buffer"]["subcategories"].append({
+                "label": tx_cat,
+                "emoji": "❓",
+                "amount": total_amt,
+                "budget": 0.0,
+                "match": [tx_cat]
+            })
+            sections_map["Buffer"]["spent"] += total_amt
+            
+    # Format Response: strict order
+    response = [
+        sections_map["Essentials"],
+        sections_map["Lifestyle"],
+        sections_map["Future-oriented"],
+        sections_map["Buffer"]
+    ]
+    return response
+
+
+class CategoryBudgetUpdate(BaseModel):
+    section: str
+    label: str
+    emoji: str
+    budget: float
+
+@router.post("/budgets/category")
+def upsert_category_budget(
+    body: CategoryBudgetUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from datetime import datetime
+    current_month = datetime.now().strftime("%Y-%m")
+    full_category = f"{body.label}|{body.emoji}"
+    
+    budget_row = db.query(Budget).filter(
+        Budget.user_id == current_user.id, 
+        Budget.month == current_month,
+        Budget.category == full_category
+    ).first()
+    
+    if budget_row:
+        budget_row.monthly_limit = body.budget
+    else:
+        budget_row = Budget(
+            user_id=current_user.id,
+            section=body.section,
+            category=full_category,
+            monthly_limit=body.budget,
+            month=current_month
+        )
+        db.add(budget_row)
+        
+    db.commit()
+    return {"status": "success", "monthly_limit": budget_row.monthly_limit}
+
+
+from typing import List
+from pydantic import BaseModel
+
+class BulkCategoryBudgetUpdate(BaseModel):
+    section: str
+    updates: List[dict] # {label, emoji, budget}
+
+@router.post("/budgets/bulk_update")
+def bulk_update_budgets(
+    body: BulkCategoryBudgetUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from datetime import datetime
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    for update in body.updates:
+        full_category = f"{update['label']}|{update['emoji']}"
+        budget_row = db.query(Budget).filter(
+            Budget.user_id == current_user.id, 
+            Budget.month == current_month,
+            Budget.category == full_category
+        ).first()
+        
+        if budget_row:
+            budget_row.monthly_limit = update['budget']
+        else:
+            budget_row = Budget(
+                user_id=current_user.id,
+                section=body.section,
+                category=full_category,
+                monthly_limit=update['budget'],
+                month=current_month
+            )
+            db.add(budget_row)
+            
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/budgets/insights")
+def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    from datetime import datetime
+    import calendar
+    
+    now = datetime.now()
+    current_month = now.strftime("%Y-%m")
+    
+    # Calculate previous month
+    if now.month == 1:
+        prev_month = f"{now.year - 1}-12"
+    else:
+        prev_month = f"{now.year}-{now.month - 1:02d}"
+        
+    days_in_month = calendar.monthrange(now.year, now.month)[1]
+    days_passed = now.day
+    days_remaining = days_in_month - days_passed
+    
+    # 1. Fetch current month budgets
+    budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == current_month).all()
+    total_budget = sum(b.monthly_limit for b in budgets)
+    
+    # 2. Fetch current month spend
+    curr_spend_query = (
+        db.query(Transaction.category, Transaction.date, Transaction.amount)
+        .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
+        .filter(Transaction.date.like(f"{current_month}%"))
+        .all()
+    )
+    
+    total_spend = sum(t.amount for t in curr_spend_query)
+    
+    # Pace tracking logic
+    daily_spend = {day: 0.0 for day in range(1, days_in_month + 1)}
+    for t in curr_spend_query:
+        try:
+            day = int(t.date.split("-")[2][:2])
+            daily_spend[day] += t.amount
+        except:
+            pass
+            
+    pace_data = []
+    cumulative_spend = 0.0
+    ideal_daily = total_budget / days_in_month if total_budget > 0 else 0
+    
+    for day in range(1, days_in_month + 1):
+        if day <= days_passed:
+            cumulative_spend += daily_spend[day]
+            pace_data.append({
+                "day": day,
+                "ideal": ideal_daily * day,
+                "actual": cumulative_spend
+            })
+        else:
+            pace_data.append({
+                "day": day,
+                "ideal": ideal_daily * day,
+                "actual": None
+            })
+            
+    # Category mapping helper
+    def map_to_sections(spend_rows, budget_rows):
+        res = {
+            "Essentials": {"allocated": 0, "used": 0},
+            "Lifestyle": {"allocated": 0, "used": 0},
+            "Future-oriented": {"allocated": 0, "used": 0},
+            "Buffer": {"allocated": 0, "used": 0},
+        }
+        
+        # map budgets
+        b_map = {}
+        for b in budget_rows:
+            label = b.category.split("|")[0]
+            b_map[label] = b.section
+            if b.section in res:
+                res[b.section]["allocated"] += b.monthly_limit
+            
+        # map spend
+        for row in spend_rows:
+            # handle the simple structure or full object
+            cat = row.category if hasattr(row, 'category') else row[0]
+            amt = row.amount if hasattr(row, 'amount') else row[1]
+            
+            # Match
+            matched = False
+            for b_label, b_section in b_map.items():
+                if cat == b_label or (b_label == "Housing & Household" and cat in ["Housing", "Household"]):
+                    if b_section in res:
+                        res[b_section]["used"] += amt
+                    matched = True
+                    break
+            
+            if not matched:
+                res["Buffer"]["used"] += amt
+                
+        return res
+
+    curr_sections = map_to_sections(curr_spend_query, budgets)
+    
+    # 3. Fetch prev month spend & budgets for trends
+    prev_budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == prev_month).all()
+    prev_spend_query = (
+        db.query(Transaction.category, func.sum(Transaction.amount).label("total"))
+        .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
+        .filter(Transaction.date.like(f"{prev_month}%"))
+        .group_by(Transaction.category)
+        .all()
+    )
+    
+    prev_sections = map_to_sections(prev_spend_query, prev_budgets)
+    
+    trends = []
+    for section in curr_sections.keys():
+        curr_used = curr_sections[section]["used"]
+        prev_used = prev_sections[section]["used"]
+        
+        diff_pct = 0
+        if prev_used > 0:
+            diff_pct = ((curr_used - prev_used) / prev_used) * 100
+        elif curr_used > 0:
+            diff_pct = 100
+            
+        trends.append({
+            "section": section,
+            "current": curr_used,
+            "previous": prev_used,
+            "diff_pct": round(diff_pct)
+        })
+
+    return {
+        "health": {
+            "total_budget": total_budget,
+            "total_spend": total_spend,
+            "remaining": total_budget - total_spend,
+            "days_remaining": days_remaining,
+            "safe_daily": (total_budget - total_spend) / days_remaining if days_remaining > 0 else 0,
+            "utilization": (total_spend / total_budget * 100) if total_budget > 0 else 0
+        },
+        "buckets": [
+            {"name": k, "allocated": v["allocated"], "used": v["used"]}
+            for k, v in curr_sections.items()
+        ],
+        "pace": pace_data,
+        "trends": trends,
+        "raw_budgets": [{"category": b.category, "monthly_limit": b.monthly_limit} for b in budgets],
+        "raw_spend": [{"category": getattr(t, 'category', t[0]), "amount": getattr(t, 'amount', t[1] if isinstance(t, tuple) and len(t) > 1 else t.amount if hasattr(t, 'amount') else 0)} for t in curr_spend_query]
+    }
+
+# ---------------------------------------------------------------------------
 # Summary (all-time category totals)
 # ---------------------------------------------------------------------------
 @router.get("/summary")

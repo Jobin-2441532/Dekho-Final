@@ -36,10 +36,11 @@ class Budget(Base):
     __tablename__ = "budgets"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    category = Column(String, nullable=False)
-    monthly_limit = Column(Float, nullable=False)
-    month = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    section = Column(String(64), nullable=False, server_default="Buffer")
+    category = Column(String(128), nullable=False)
+    monthly_limit = Column(Float, default=0.0)
+    month = Column(String(7), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
 
     user = relationship("User", back_populates="budgets")
