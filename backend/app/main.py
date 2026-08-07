@@ -108,14 +108,17 @@ app.add_middleware(
 
 @app.on_event("startup")
 def run_db_migrations():
-    from app.core.database import engine
+    from app.core.database import engine, Base
+    from app.models.financial import Budget # ensure model is registered
     from sqlalchemy import text
     try:
         with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
-            conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
-            conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
-        logger.info("Successfully ensured budgets schema columns exist via engine.begin()")
+            res = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='budgets' AND column_name='section';")).fetchone()
+            if not res:
+                logger.info("budgets.section column missing — recreating budgets table")
+                conn.execute(text("DROP TABLE IF EXISTS budgets CASCADE;"))
+        Base.metadata.create_all(bind=engine)
+        logger.info("Successfully verified budgets table schema")
     except Exception as e:
         logger.warning(f"Database startup auto-migration notice: {e}")
 

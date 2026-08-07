@@ -509,10 +509,13 @@ def bulk_update_budgets(
 
         # 1. Ensure database schema has section column
         try:
+            from app.core.database import engine, Base
+            from app.models.financial import Budget
             with engine.begin() as conn:
-                conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
-                conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
-                conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
+                chk = conn.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name='budgets' AND column_name='section';")).fetchone()
+                if not chk:
+                    conn.execute(text("DROP TABLE IF EXISTS budgets CASCADE;"))
+            Base.metadata.create_all(bind=engine)
         except Exception as e:
             logger.warning(f"Schema update notice: {e}")
 
