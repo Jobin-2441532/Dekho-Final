@@ -76,17 +76,19 @@ ALLOWED_ORIGINS = [
     "https://dekhoapp.vercel.app",
 ]
 
-# Allow custom domain from env var if provided
 env_origin = os.getenv("FRONTEND_ORIGIN")
 if env_origin and env_origin not in ALLOWED_ORIGINS:
     ALLOWED_ORIGINS.append(env_origin)
 
+is_prod = os.getenv("ENV", "development") == "production"
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_origins=ALLOWED_ORIGINS if is_prod else ["*"],
+    allow_origin_regex=None if is_prod else r"https?://.*",
+    allow_credentials=True if is_prod else False,
+    allow_methods=["*"],
+    allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
 

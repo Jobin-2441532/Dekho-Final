@@ -123,14 +123,17 @@ export default function Budgets() {
       }))
       
       // Map raw budgets to subcategories
-      if (data.raw_budgets) {
+      if (Array.isArray(data?.raw_budgets)) {
         data.raw_budgets.forEach((rb: any) => {
-          const [lbl] = rb.category.split('|')
+          if (!rb || !rb.category) return
+          const limit = Number(rb.monthly_limit || 0)
+          const [lbl] = String(rb.category).split('|')
           newCats.forEach(cat => {
+            if (!cat.subcategories) return
             cat.subcategories.forEach((sub: any) => {
-              if (sub.label === lbl || sub.match.includes(lbl)) {
-                sub.budget = rb.monthly_limit
-                cat.budget += rb.monthly_limit
+              if (sub && (sub.label === lbl || (Array.isArray(sub.match) && sub.match.includes(lbl)))) {
+                sub.budget = limit
+                cat.budget = (cat.budget || 0) + limit
               }
             })
           })
@@ -138,21 +141,25 @@ export default function Budgets() {
       }
       
       // Map raw spend to subcategories
-      if (data.raw_spend) {
+      if (Array.isArray(data?.raw_spend)) {
         data.raw_spend.forEach((rs: any) => {
+          if (!rs) return
+          const amt = Number(rs.amount || 0)
+          const catName = rs.category || 'Uncategorised'
           let found = false
           newCats.forEach(cat => {
+            if (!cat.subcategories) return
             cat.subcategories.forEach((sub: any) => {
-              if (sub.match.includes(rs.category)) {
-                sub.amount += rs.amount
-                cat.spent += rs.amount
+              if (sub && Array.isArray(sub.match) && sub.match.includes(catName)) {
+                sub.amount = (sub.amount || 0) + amt
+                cat.spent = (cat.spent || 0) + amt
                 found = true
               }
             })
           })
-          if (!found) {
-            newCats[3].subcategories[1].amount += rs.amount // Uncategorised
-            newCats[3].spent += rs.amount
+          if (!found && newCats[3] && Array.isArray(newCats[3].subcategories) && newCats[3].subcategories[1]) {
+            newCats[3].subcategories[1].amount = (newCats[3].subcategories[1].amount || 0) + amt
+            newCats[3].spent = (newCats[3].spent || 0) + amt
           }
         })
       }

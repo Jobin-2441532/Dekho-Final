@@ -172,14 +172,10 @@
 
 /* Quick Categories */
 .quickCategoriesRow {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none; /* Firefox */
-}
-.quickCategoriesRow::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
 }
 
 .quickCategoryBtn {
@@ -187,23 +183,38 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 2px;
   border: 1px solid #e1d8cd;
-  border-radius: 12px;
-  padding: 10px 0;
-  min-width: 80px;
-  flex: 1;
-  background-color: transparent;
+  border-radius: 10px;
+  padding: 8px 4px;
+  background-color: #FAF5F0;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.quickCategoryBtn img {
-  width: 24px;
-  height: 24px;
+.quickCategoryBtn:active,
+.quickCategoryActive {
+  background-color: #5A3825 !important;
+  border-color: #5A3825 !important;
+}
+
+.quickCategoryActive .quickCategoryLabel {
+  color: #ffffff !important;
+}
+
+.quickCategoryEmoji {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .quickCategoryLabel {
   font-size: 10px;
-  color: #8c827a;
+  font-weight: 500;
+  color: #6b6058;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Notes Textarea */

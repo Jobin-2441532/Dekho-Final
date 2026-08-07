@@ -177,6 +177,26 @@ export default function AddExpense() {
           </div>
         </div>
 
+        {/* Quick Add Categories */}
+        <div className={styles.quickCategoriesRow}>
+          {[
+            { label: 'Food & Dining', emoji: '🍽️' },
+            { label: 'Transport', emoji: '🚗' },
+            { label: 'Shopping', emoji: '🛍️' },
+            { label: 'Bills', emoji: '🧾' },
+          ].map((qc) => (
+            <button
+              key={qc.label}
+              type="button"
+              className={`${styles.quickCategoryBtn} ${category === qc.label ? styles.quickCategoryActive : ''}`}
+              onClick={() => setCategory(qc.label)}
+            >
+              <span className={styles.quickCategoryEmoji}>{qc.emoji}</span>
+              <span className={styles.quickCategoryLabel}>{qc.label}</span>
+            </button>
+          ))}
+        </div>
+
         {/* Notes */}
         <div className={styles.notesContainer}>
           <div className={styles.notesHeader}>
