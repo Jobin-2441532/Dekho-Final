@@ -496,6 +496,14 @@ def bulk_update_budgets(
     from datetime import datetime
     current_month = datetime.now().strftime("%Y-%m")
     
+    # 1. Fetch existing budgets for current month once
+    existing_budgets = db.query(Budget).filter(
+        Budget.user_id == current_user.id, 
+        Budget.month == current_month
+    ).all()
+    
+    existing_map = {b.category.split('|')[0].strip().lower(): b for b in existing_budgets}
+
     updated_count = 0
     for update in body.updates:
         lbl = str(update.get('label', '')).strip()
@@ -505,14 +513,9 @@ def bulk_update_budgets(
         full_category = f"{lbl}|{emoji}"
         limit = float(update.get('budget', 0) or 0)
 
-        # Match existing budget by label prefix or full category
-        budget_row = db.query(Budget).filter(
-            Budget.user_id == current_user.id, 
-            Budget.month == current_month,
-            (Budget.category == full_category) | (Budget.category.like(f"{lbl}|%")) | (Budget.category == lbl)
-        ).first()
-        
-        if budget_row:
+        lbl_lower = lbl.lower()
+        if lbl_lower in existing_map:
+            budget_row = existing_map[lbl_lower]
             budget_row.monthly_limit = limit
             budget_row.category = full_category
             budget_row.section = body.section
@@ -525,6 +528,7 @@ def bulk_update_budgets(
                 month=current_month
             )
             db.add(budget_row)
+            existing_map[lbl_lower] = budget_row
         updated_count += 1
             
     db.commit()
@@ -534,6 +538,7 @@ def bulk_update_budgets(
 def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime
     import calendar
+    import re
     from app.core.logging_config import logger
 
     try:
@@ -615,21 +620,24 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
                 "Future-oriented": {"allocated": 0.0, "used": 0.0},
                 "Buffer": {"allocated": 0.0, "used": 0.0},
             }
+
+            def clean_cat(s):
+                return re.sub(r'[^\w\s]', '', str(s or '')).strip().lower()
             
             # map budgets
             b_map = {}
             for b in budget_rows:
                 cat_str = str(b.category or '')
                 label = cat_str.split("|")[0]
-                b_map[label] = b.section
+                b_map[clean_cat(label)] = (b.section, label)
                 if b.section in res:
                     res[b.section]["allocated"] += float(b.monthly_limit or 0)
                 
             # map spend
             for row in spend_rows:
-                cat = str(getattr(row, 'category', row[0] if len(row) > 0 else ''))
+                cat_raw = str(getattr(row, 'category', row[0] if len(row) > 0 else ''))
+                cat_c = clean_cat(cat_raw)
                 
-                # Convert raw decimal/float to python float safely
                 if hasattr(row, 'amount') and row.amount is not None:
                     amt = float(row.amount)
                 elif len(row) > 2 and row[2] is not None:
@@ -640,15 +648,18 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
                     amt = 0.0
                     
                 matched = False
-                for b_label, b_section in b_map.items():
-                    if cat == b_label or (b_label == "Housing & Household" and cat in ["Housing", "Household"]):
+                for b_clean, (b_section, b_label) in b_map.items():
+                    if cat_c == b_clean or cat_c in b_clean or b_clean in cat_c:
                         if b_section in res:
                             res[b_section]["used"] += amt
                         matched = True
                         break
                 
                 if not matched:
-                    res["Buffer"]["used"] += amt
+                    if any(k in cat_raw for k in ["Food", "Dining", "Grocer", "Transport", "Bills", "Health", "Utility", "Housing"]):
+                        res["Essentials"]["used"] += amt
+                    else:
+                        res["Buffer"]["used"] += amt
                     
             return res
 
