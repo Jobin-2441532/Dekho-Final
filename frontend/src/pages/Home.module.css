@@ -85,7 +85,7 @@
   font-family: var(--font-headline);
   font-size: var(--text-2xl);
   font-weight: var(--font-bold);
-  color: #FFFFFF;
+  color: #FFF;
   line-height: 1.25;
   letter-spacing: -0.01em;
 }
@@ -104,7 +104,7 @@
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: var(--radius-full);
-  color: #FFFFFF;
+  color: #FFF;
   font-family: var(--font-body);
   font-size: var(--text-sm);
   font-weight: var(--font-medium);
@@ -474,7 +474,7 @@
   font-weight: 700;
   line-height: 1.3;
   margin-bottom: 10px;
-  color: #FFFFFF;
+  color: #FFF;
 }
 .heroSubtext {
   font-size: 14px;
@@ -491,7 +491,7 @@
 .tapToSee {
   background: rgba(255,255,255,0.15);
   border: none;
-  color: #fff;
+  color: #FFF;
   padding: 6px 16px;
   border-radius: 20px;
   font-size: 13px;
@@ -507,7 +507,7 @@
   border-radius: 26px;
   background: #6B3A2A;
   border: none;
-  color: #fff;
+  color: #FFF;
   font-size: 22px;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(107,58,42,0.35);
@@ -526,17 +526,17 @@
   max-height: 420px;
 }
 .chatHeader {
-  background: #6B3A2A; color: #fff;
+  background: #6B3A2A; color: #FFF;
   padding: 14px 18px; font-weight: 600; font-size: 15px;
 }
 .chatMessages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .chatEmpty    { font-size: 13px; color: #9B9B9B; text-align: center; margin-top: 20px; }
 .chatMsg      { font-size: 13px; line-height: 1.5; max-width: 85%; padding: 8px 12px; border-radius: 12px; }
-.user  { background: #6B3A2A; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
-.dekho { background: #fff; color: #1A1A1A; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #E8D5CC; }
+.user  { background: #6B3A2A; color: #FFF; align-self: flex-end; border-bottom-right-radius: 4px; }
+.dekho { background: var(--bg-card); color: #1A1A1A; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #E8D5CC; }
 .chatInput { display: flex; border-top: 1px solid #E8D5CC; }
 .chatInput input { flex: 1; border: none; padding: 12px 14px; background: #FAF7F2; font-size: 13px; outline: none; }
-.chatInput button { padding: 12px 16px; background: #6B3A2A; color: #fff; border: none; font-size: 16px; cursor: pointer; }
+.chatInput button { padding: 12px 16px; background: #6B3A2A; color: #FFF; border: none; font-size: 16px; cursor: pointer; }
 
 .reviewCard { background: var(--bg-card); border-radius: var(--radius-xl); padding: var(--space-3) var(--space-5); box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: transform var(--transition-fast); }
 .reviewCard:active { transform: scale(0.98); }

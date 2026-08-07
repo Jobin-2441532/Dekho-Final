@@ -199,7 +199,7 @@
 }
 
 .quickCategoryActive .quickCategoryLabel {
-  color: #ffffff !important;
+  color: #FFF !important;
 }
 
 .quickCategoryEmoji {
@@ -289,7 +289,7 @@
 
 .brownBtn {
   background-color: #6B4C3A;
-  color: #ffffff;
+  color: #FFF;
 }
 
 /* Bottom Sheet General */
@@ -395,7 +395,7 @@
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #e1d8cd;
-  background-color: #ffffff;
+  background-color: #FFF;
   font-size: 14px;
   color: #1c1c1c;
   outline: none;
@@ -433,7 +433,7 @@
   border-radius: 20px;
   border: none;
   background-color: #6B4C3A;
-  color: #ffffff;
+  color: #FFF;
   font-size: 11px;
   cursor: pointer;
   transition: all 0.2s;
@@ -463,7 +463,7 @@
   border-radius: 8px;
   border: none;
   background-color: #6B4C3A;
-  color: #ffffff;
+  color: #FFF;
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;

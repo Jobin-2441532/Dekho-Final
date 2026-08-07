@@ -1,8 +1,8 @@
 .page {
   padding-bottom: 120px;
-  background-color: #F9F6F0;
+  background-color: var(--bg-base);
   min-height: 100vh;
-  color: #333;
+  color: var(--color-on-surface);
 }
 .px {
   padding: 0 20px;
@@ -13,12 +13,12 @@
   justify-content: center;
   padding: 24px 20px 16px;
   position: relative;
-  background-color: #F9F6F0;
+  background-color: var(--bg-base);
 }
 .title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin: 0;
 }
 
@@ -111,9 +111,9 @@
   margin: 0 20px;
   padding: 16px;
   border-radius: 12px;
-  background: #FFF;
-  color: #111;
-  border: 1px solid #E0DCD3;
+  background: var(--bg-card);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-outline-var);
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -125,12 +125,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #FFF;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 24px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  border: 1px solid #F0ECE1;
+  border: 1px solid var(--color-outline-var);
 }
 .summaryCol {
   display: flex;
@@ -154,7 +154,7 @@
 }
 .summaryLabel {
   font-size: 0.65rem;
-  color: #888;
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 2px;
@@ -162,19 +162,19 @@
 .summaryValue {
   font-size: 0.9rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .summaryDivider {
   width: 1px;
   height: 30px;
-  background: #F0ECE1;
+  background: var(--color-outline-var);
 }
 
 .sectionTitle {
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 16px;
-  color: #111;
+  color: var(--color-on-surface);
 }
 
 .categoryList {
@@ -183,9 +183,9 @@
   gap: 16px;
 }
 .categoryCard {
-  background: #FFF;
+  background: var(--bg-card);
   border-radius: 16px;
-  border: 1px solid #F0ECE1;
+  border: 1px solid var(--color-outline-var);
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
@@ -217,11 +217,11 @@
 .catLabel {
   font-size: 1rem;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .catSubtitle {
   font-size: 0.65rem;
-  color: #888;
+  color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-top: 2px;
@@ -238,10 +238,10 @@
 }
 .catAmts {
   font-size: 0.85rem;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .catAmtsMuted {
-  color: #888;
+  color: var(--color-muted);
   font-size: 0.75rem;
 }
 .catPctPill {
@@ -252,18 +252,18 @@
 }
 .catNotSet {
   font-size: 0.8rem;
-  color: #888;
+  color: var(--color-muted);
 }
 .editBtn {
   background: none;
   border: none;
-  color: #999;
+  color: var(--color-muted);
   cursor: pointer;
   padding: 4px;
 }
 .catBar {
   height: 2px;
-  background: #F0ECE1;
+  background: var(--color-outline-var);
   margin: 0 16px 16px;
   border-radius: 2px;
 }
@@ -288,7 +288,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #F9F6F0;
+  background: var(--bg-base);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +297,7 @@
 }
 .subLabel {
   font-size: 0.65rem;
-  color: #666;
+  color: var(--color-on-surface-var);
   margin-bottom: 4px;
   line-height: 1.1;
   max-width: 90%;
@@ -306,12 +306,12 @@
 .subAmount {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin-bottom: 2px;
 }
 .subBudget {
   font-size: 0.6rem;
-  color: #999;
+  color: var(--color-muted);
 }
 
 /* Modals */
@@ -326,7 +326,7 @@
   padding: 20px;
 }
 .modalCentered {
-  background: #FFF;
+  background: var(--bg-card);
   width: 100%;
   max-width: 400px;
   border-radius: 16px;
@@ -341,7 +341,7 @@
 .modalHeaderCentered h2 {
   font-size: 1.1rem;
   margin: 0;
-  color: #111;
+  color: var(--color-on-surface);
   font-weight: 700;
 }
 .editListCentered {
@@ -367,16 +367,16 @@
 }
 .editLabelCentered {
   font-size: 0.8rem;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .editInputCentered {
   width: 80px;
-  background: #FFF;
-  border: 1px solid #E0DCD3;
+  background: var(--bg-card);
+  border: 1px solid var(--color-outline-var);
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
-  color: #111;
+  color: var(--color-on-surface);
   outline: none;
   text-align: left;
 }
@@ -387,11 +387,11 @@
 }
 .cancelBtn {
   flex: 1;
-  background: #FFF;
-  color: #111;
+  background: var(--bg-card);
+  color: var(--color-on-surface);
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #E0DCD3;
+  border: 1px solid var(--color-outline-var);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -415,11 +415,11 @@
   gap: 20px;
 }
 .insightCard {
-  background: #FFF;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  border: 1px solid #F0ECE1;
+  border: 1px solid var(--color-outline-var);
 }
 .insightLabel {
   display: flex;
@@ -433,11 +433,11 @@
 .insightTitle {
   font-size: 1.5rem;
   margin: 0 0 8px;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .insightSub {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--color-on-surface-var);
   margin: 0 0 20px;
 }
 .insightDataRow {
@@ -446,7 +446,7 @@
 }
 .insightDataCol {
   flex: 1;
-  background: #F9F6F0;
+  background: var(--bg-base);
   padding: 12px;
   border-radius: 12px;
   display: flex;
@@ -454,42 +454,42 @@
 }
 .insightDataLabel {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--color-muted);
   margin-bottom: 4px;
 }
 .insightDataVal {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .whiteCard {
-  background: #FFF;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-  border: 1px solid #F0ECE1;
+  border: 1px solid var(--color-outline-var);
 }
 .whiteCardHeader {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #999;
+  color: var(--color-muted);
   letter-spacing: 0.5px;
   margin-bottom: 12px;
 }
 .whiteCardTitle {
   font-size: 1.25rem;
   margin: 0 0 4px;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .whiteCardSub {
   font-size: 0.85rem;
-  color: #666;
+  color: var(--color-on-surface-var);
   margin: 0 0 20px;
 }
 .bubbleChart {
   position: relative;
   height: 200px;
-  background: #F9F6F0;
+  background: var(--bg-base);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 16px;
@@ -501,7 +501,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #111;
+  color: var(--color-on-surface);
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 .bubbleName {
@@ -527,7 +527,7 @@
 }
 .legendName {
   font-size: 0.8rem;
-  color: #555;
+  color: var(--color-on-surface-var);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -538,7 +538,7 @@
 .legendVal {
   font-size: 1rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin-top: 4px;
 }
 .trendList {
@@ -551,7 +551,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 16px;
-  border-bottom: 1px solid #F0ECE1;
+  border-bottom: 1px solid var(--color-outline-var);
 }
 .trendRow:last-child {
   border-bottom: none;
@@ -564,11 +564,11 @@
 .trendName {
   font-size: 0.95rem;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .trendComparison {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--color-muted);
   margin-top: 4px;
 }
 .trendDiff {
@@ -661,13 +661,13 @@
 .wcHeader {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #999;
+  color: var(--color-muted);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 .wcToggle {
   display: flex;
-  background: #F9F6F0;
+  background: var(--bg-base);
   border-radius: 20px;
   padding: 2px;
 }
@@ -676,22 +676,22 @@
   border-radius: 20px;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #555;
+  color: var(--color-on-surface-var);
 }
 .wcToggleBtn.active {
-  background: #FFF;
-  color: #111;
+  background: var(--bg-card);
+  color: var(--color-on-surface);
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 .wcTitle {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin: 0 0 6px 0;
 }
 .wcSub {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--color-on-surface-var);
   margin: 0 0 24px 0;
 }
 
@@ -718,30 +718,30 @@
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #FFF;
-  border: 1px solid #EEE;
+  background: var(--bg-card);
+  border: 1px solid var(--color-outline-var);
   border-radius: 12px;
   padding: 2px 6px;
   font-size: 0.55rem;
   font-weight: 700;
-  color: #555;
+  color: var(--color-on-surface-var);
 }
 .bubbleName {
   font-size: 0.65rem;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
   margin-bottom: 2px;
 }
 .bubbleVal {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
 }
 
 .paceTooltip {
   position: absolute;
-  background: #FFF;
-  border: 1px solid #EEE;
+  background: var(--bg-card);
+  border: 1px solid var(--color-outline-var);
   border-radius: 8px;
   padding: 8px 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
@@ -752,7 +752,7 @@
 .paceTtVal {
   font-size: 0.8rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin-bottom: 2px;
 }
 .paceTtStat {
@@ -775,7 +775,7 @@
   width: 80px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .dbTrackContainer {
   flex: 1;
@@ -809,7 +809,7 @@
   transform: translateX(-50%);
   font-size: 0.6rem;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .dbStat {
   width: 60px;
@@ -849,8 +849,8 @@
   line-height: 1.4;
 }
 .bannerBtn {
-  background: #FFF;
-  border: 1px solid #E0DCD3;
+  background: var(--bg-card);
+  border: 1px solid var(--color-outline-var);
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 0.8rem;
@@ -870,7 +870,7 @@
 .sectionTitle {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin: 0;
 }
 .addBtn {
@@ -887,11 +887,11 @@
   cursor: pointer;
 }
 .goalCard {
-  background: #FFF;
+  background: var(--bg-card);
   border-radius: 16px;
   overflow: hidden;
   margin-bottom: 20px;
-  border: 1px solid #F0ECE1;
+  border: 1px solid var(--color-outline-var);
   box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 .goalImageWrap {
@@ -929,7 +929,7 @@
 }
 .goalStatus {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--color-on-surface-var);
   font-style: italic;
   margin: 0;
   max-width: 60%;
@@ -942,18 +942,18 @@
 .goalDeadlineLabel {
   font-size: 0.6rem;
   font-weight: 700;
-  color: #999;
+  color: var(--color-muted);
   letter-spacing: 0.5px;
 }
 .goalDeadline {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .goalName {
   font-size: 1rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
   margin-bottom: 8px;
 }
 .goalProgress {
@@ -964,11 +964,11 @@
 .goalCurrent {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #111;
+  color: var(--color-on-surface);
 }
 .goalSep {
   font-size: 0.8rem;
-  color: #999;
+  color: var(--color-muted);
   margin: 0 4px;
 }
 .goalPct {
@@ -979,7 +979,7 @@
 }
 .goalTrack {
   height: 6px;
-  background: #F0ECE1;
+  background: var(--color-outline-var);
   border-radius: 4px;
   margin-bottom: 16px;
   overflow: hidden;
@@ -990,7 +990,7 @@
   border-radius: 4px;
 }
 .goalContribCard {
-  background: #F9F6F0;
+  background: var(--bg-base);
   padding: 12px;
   border-radius: 12px;
 }
@@ -999,17 +999,17 @@
 }
 .goalContribText {
   font-size: 0.75rem;
-  color: #111;
+  color: var(--color-on-surface);
   margin: 0;
 }
 .goalActionBtn {
   flex: 1;
   padding: 8px;
   font-size: 0.7rem;
-  background: #FFF;
-  border: 1px solid #E0DCD3;
+  background: var(--bg-card);
+  border: 1px solid var(--color-outline-var);
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  color: #111;
+  color: var(--color-on-surface);
 }
