@@ -177,26 +177,6 @@ export default function AddExpense() {
           </div>
         </div>
 
-        {/* Quick Categories */}
-        <div className={styles.quickCategoriesRow}>
-          <button className={styles.quickCategoryBtn} onClick={() => setCategory('Food & Dining')}>
-            <span style={{ fontSize: '20px' }}>🍽️</span>
-            <span className={styles.quickCategoryLabel}>Food & Dining</span>
-          </button>
-          <button className={styles.quickCategoryBtn} onClick={() => setCategory('Transport')}>
-            <span style={{ fontSize: '20px' }}>🚗</span>
-            <span className={styles.quickCategoryLabel}>Transport</span>
-          </button>
-          <button className={styles.quickCategoryBtn} onClick={() => setCategory('Shopping')}>
-            <span style={{ fontSize: '20px' }}>🛍️</span>
-            <span className={styles.quickCategoryLabel}>Shopping</span>
-          </button>
-          <button className={styles.quickCategoryBtn} onClick={() => setCategory('Bills')}>
-            <span style={{ fontSize: '20px' }}>🧾</span>
-            <span className={styles.quickCategoryLabel}>Bills</span>
-          </button>
-        </div>
-
         {/* Notes */}
         <div className={styles.notesContainer}>
           <div className={styles.notesHeader}>

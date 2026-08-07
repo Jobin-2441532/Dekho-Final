@@ -216,8 +216,22 @@ export default function Budgets() {
   )
 
   if (!insights) return (
-    <div style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--text-secondary)' }}>
-      <p>Failed to load budget insights. Please try again later.</p>
+    <div style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--text-secondary)', marginTop: '40px' }}>
+      <p style={{ marginBottom: '16px', fontSize: '15px' }}>Failed to load budget insights. Please try again.</p>
+      <button 
+        onClick={loadData}
+        style={{
+          padding: '10px 20px',
+          backgroundColor: '#5A3825',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '12px',
+          fontWeight: 600,
+          cursor: 'pointer'
+        }}
+      >
+        Retry
+      </button>
     </div>
   )
 
