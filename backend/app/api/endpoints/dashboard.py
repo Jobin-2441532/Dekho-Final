@@ -514,7 +514,12 @@ def bulk_update_budgets(
                 monthly_limit=update['budget'],
                 month=current_month
             )
-       @router.get("/budgets/insights")
+            db.add(budget_row)
+            
+    db.commit()
+    return {"status": "success"}
+
+@router.get("/budgets/insights")
 def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime
     import calendar
