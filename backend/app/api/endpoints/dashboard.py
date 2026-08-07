@@ -599,9 +599,18 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
         # map spend
         for row in spend_rows:
             # handle the simple structure or full object
-            cat = row.category if hasattr(row, 'category') else row[0]
-            amt = row.amount if hasattr(row, 'amount') else row[1]
+            cat = getattr(row, 'category', row[0])
             
+            # Figure out amount safely.
+            # curr_spend_query returns (category, date, amount) -> len 3
+            # prev_spend_query returns (category, total) -> len 2
+            if hasattr(row, 'amount'):
+                amt = row.amount
+            elif len(row) > 2:
+                amt = row[2]  # from curr_spend_query
+            else:
+                amt = row[1]  # from prev_spend_query
+                
             # Match
             matched = False
             for b_label, b_section in b_map.items():
@@ -664,7 +673,13 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
         "pace": pace_data,
         "trends": trends,
         "raw_budgets": [{"category": b.category, "monthly_limit": b.monthly_limit} for b in budgets],
-        "raw_spend": [{"category": getattr(t, 'category', t[0]), "amount": getattr(t, 'amount', t[1] if isinstance(t, tuple) and len(t) > 1 else t.amount if hasattr(t, 'amount') else 0)} for t in curr_spend_query]
+        "raw_spend": [
+            {
+                "category": getattr(t, 'category', t[0]),
+                "amount": getattr(t, 'amount', t[2] if isinstance(t, tuple) and len(t) > 2 else t[1] if isinstance(t, tuple) and len(t) > 1 else 0)
+            }
+            for t in curr_spend_query
+        ]
     }
 
 # ---------------------------------------------------------------------------

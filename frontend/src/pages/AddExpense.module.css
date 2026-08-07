@@ -5,7 +5,7 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  height: 100%;
+  height: 100dvh;
   background-color: #FAF5F0;
   z-index: 1000;
   display: flex;
@@ -45,7 +45,7 @@
 .content {
   flex: 1;
   overflow-y: auto;
-  padding: 0 16px 16px;
+  padding: 0 16px 200px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -330,8 +330,10 @@
 .sheetList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  max-height: 60vh;
   overflow-y: auto;
+  padding-bottom: 150px;
 }
 
 .sheetItem {

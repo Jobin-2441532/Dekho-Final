@@ -111,17 +111,16 @@ export default function Budgets() {
       setGoals(goalsData)
       setInsights(data)
       
-      const newCats = [...categoriesData]
-      
-      // Reset amounts
-      newCats.forEach(cat => {
-        cat.spent = 0
-        cat.budget = 0
-        cat.subcategories.forEach((sub: any) => { 
-          sub.amount = 0
-          sub.budget = 0
-        })
-      })
+      const newCats = categoriesData.map(cat => ({
+        ...cat,
+        spent: 0,
+        budget: 0,
+        subcategories: cat.subcategories.map((sub: any) => ({
+          ...sub,
+          amount: 0,
+          budget: 0
+        }))
+      }))
       
       // Map raw budgets to subcategories
       if (data.raw_budgets) {
@@ -208,11 +207,17 @@ export default function Budgets() {
     return '₹' + Math.round(n).toLocaleString('en-IN');
   }
 
-  if (loading || !insights) return (
+  if (loading) return (
     <div style={{ padding: 'var(--space-5)' }}>
       <SkeletonCard />
       <div style={{ height: 'var(--space-4)' }} />
       <SkeletonCard />
+    </div>
+  )
+
+  if (!insights) return (
+    <div style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--text-secondary)' }}>
+      <p>Failed to load budget insights. Please try again later.</p>
     </div>
   )
 
