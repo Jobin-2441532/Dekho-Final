@@ -497,8 +497,18 @@ def bulk_update_budgets(
     from app.core.logging_config import logger
 
     try:
+        from sqlalchemy import text
         current_month = datetime.now().strftime("%Y-%m")
         
+        # Ensure database schema has section column
+        try:
+            db.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
+            db.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
+            db.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
+            db.commit()
+        except Exception:
+            db.rollback()
+
         # 1. Fetch existing budgets for current month once
         existing_budgets = db.query(Budget).filter(
             Budget.user_id == current_user.id, 
@@ -556,9 +566,19 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
     from app.core.logging_config import logger
 
     try:
+        from sqlalchemy import text
         now = datetime.now()
         current_month = now.strftime("%Y-%m")
         
+        # Ensure database schema has section column
+        try:
+            db.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
+            db.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
+            db.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
+            db.commit()
+        except Exception:
+            db.rollback()
+
         # Calculate previous month
         if now.month == 1:
             prev_month = f"{now.year - 1}-12"

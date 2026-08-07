@@ -106,9 +106,20 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
+@app.on_event("startup")
+def run_db_migrations():
+    from app.core.database import engine
+    from sqlalchemy import text
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
+            conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
+            conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
+            conn.commit()
+            logger.info("Successfully ensured budgets schema columns exist")
+    except Exception as e:
+        logger.warning(f"Database startup auto-migration notice: {e}")
+
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Welcome to Ask Dekho API", "version": "0.1.0"}
