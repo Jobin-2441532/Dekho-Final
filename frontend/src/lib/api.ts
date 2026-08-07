@@ -4,7 +4,14 @@
  * Automatically attaches JWT Bearer token from localStorage.
  * Uses the Vite proxy in dev (/api → http://localhost:8000)
  */
-const BASE_URL = import.meta.env.VITE_API_URL || ''   // Use Render API URL in prod, or Vite proxy in dev
+function getBaseUrl(): string {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    return `http://${window.location.hostname}:8000`
+  }
+  return ''
+}
 
 interface ApiOptions extends RequestInit {
   params?: Record<string, string | number | boolean>
@@ -25,7 +32,8 @@ export function logout(): void {
 async function request<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const { params, ...fetchOptions } = options
 
-  let url = `${BASE_URL}${endpoint}`
+  const baseUrl = getBaseUrl()
+  let url = endpoint.startsWith('http') ? endpoint : `${baseUrl}${endpoint}`
   if (params) {
     const searchParams = new URLSearchParams(
       Object.entries(params).map(([k, v]) => [k, String(v)])
