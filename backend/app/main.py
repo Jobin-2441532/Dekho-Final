@@ -66,9 +66,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception: {exc}", exc_info=True)
+    err_detail = f"Error ({type(exc).__name__}): {str(exc)}"
     response = JSONResponse(
         status_code=500,
-        content={"detail": "An unexpected error occurred. Please try again."},
+        content={"detail": err_detail},
     )
     origin = request.headers.get("origin")
     if origin:
