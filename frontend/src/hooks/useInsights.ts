@@ -7,7 +7,19 @@
  */
 import { useState, useEffect } from 'react'
 
-const BASE = import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`
+const getBase = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
+  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    const host = window.location.hostname
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local')) {
+      return `http://${host}:8000`
+    }
+  }
+  return 'https://dekho-api.onrender.com'
+}
+
+const BASE = getBase()
 
 export interface InsightsData {
   home: {

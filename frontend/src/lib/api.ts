@@ -8,9 +8,12 @@ function getBaseUrl(): string {
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
   if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL
   if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-    return `http://${window.location.hostname}:8000`
+    const host = window.location.hostname
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.') || host.endsWith('.local')) {
+      return `http://${host}:8000`
+    }
   }
-  return ''
+  return 'https://dekho-api.onrender.com'
 }
 
 interface ApiOptions extends RequestInit {
