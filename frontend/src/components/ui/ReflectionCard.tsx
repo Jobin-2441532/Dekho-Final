@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 
 const MOOD_COLORS = {
-  calm: "#5A3825",
+  calm: "#6B3E26",
   comfort: "#7A4A20",
   productive: "#4A5C3F",
   generous: "#3F5A5A",
