@@ -245,7 +245,7 @@ export default function Budgets() {
     mindful: { grad: 'linear-gradient(135deg, #3A4A1A, #222E10)', bg: '#CDDC39', text: 'Steady pace, but keep an eye on upcoming bills.', head: 'Mindful spending.' },
     underspent: { grad: 'linear-gradient(135deg, #1A4A3A, #102E22)', bg: '#4CAF50', text: 'Lots of room left! You are doing great.', head: 'Quiet month so far.' },
     on_track: { grad: 'linear-gradient(135deg, #1A4A2A, #102E1A)', bg: '#4CAF50', text: 'Your spending perfectly matches the calendar.', head: 'Right on track.' },
-    cruising: { grad: 'linear-gradient(135deg, #4A6054, #2A362D)', bg: '#A0C8A0', text: totalBudget === 0 ? 'Budgeting starts with a goal. Set a budget to start receiving AI-driven financial insights.' : `₹${Math.max(0, buffer).toLocaleString('en-IN')} remaining — you're well in control.`, head: 'Cruising smoothly this month.' }
+    cruising: { grad: '#5A3825', bg: '#8C5A3F', text: totalBudget === 0 ? 'Budgeting starts with a goal. Set a budget to start receiving AI-driven financial insights.' : `₹${Math.max(0, buffer).toLocaleString('en-IN')} remaining — you're well in control.`, head: 'Cruising smoothly this month.' }
   }
   const config = pulseConfig[mood]
 

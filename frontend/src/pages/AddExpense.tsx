@@ -211,26 +211,26 @@ export default function AddExpense() {
           />
           <span className={styles.charCount}>{notes.length}/250</span>
         </div>
+      </div>
 
-        {/* Numpad */}
-        <div className={styles.numpadContainer}>
-          {['7', '8', '9', '+', '4', '5', '6', '-', '1', '2', '3', 'X', '0', '.', 'DEL', '='].map((key, i) => (
-            <button 
-              key={i} 
-              className={`${styles.numBtn} ${key === '=' ? styles.brownBtn : ''}`}
-              onClick={() => {
-                if (key === '=') handleSave()
-                else if (key === '+' || key === '-' || key === 'X') {
-                  // For now ignore basic math operations, just aesthetic or basic implementation
-                } else {
-                  handleNumPress(key)
-                }
-              }}
-            >
-              {key === 'DEL' ? <Delete size={20} /> : key}
-            </button>
-          ))}
-        </div>
+      {/* Numpad (Fixed at bottom) */}
+      <div className={styles.numpadContainer}>
+        {['7', '8', '9', '+', '4', '5', '6', '-', '1', '2', '3', 'X', '0', '.', 'DEL', '='].map((key, i) => (
+          <button 
+            key={i} 
+            className={`${styles.numBtn} ${key === '=' ? styles.brownBtn : ''}`}
+            onClick={() => {
+              if (key === '=') handleSave()
+              else if (key === '+' || key === '-' || key === 'X') {
+                // For now ignore basic math operations, just aesthetic or basic implementation
+              } else {
+                handleNumPress(key)
+              }
+            }}
+          >
+            {key === 'DEL' ? <Delete size={20} /> : key}
+          </button>
+        ))}
       </div>
 
       {/* Modals */}

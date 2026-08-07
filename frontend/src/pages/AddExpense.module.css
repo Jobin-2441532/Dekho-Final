@@ -249,8 +249,9 @@
 .numpadContainer {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  padding: 16px;
+  gap: 8px;
+  padding: 8px 16px 24px;
+  background-color: #FAF5F0;
   margin-top: auto; /* push to bottom */
 }
 
