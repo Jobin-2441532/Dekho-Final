@@ -554,13 +554,25 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
         budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == current_month).all()
         total_budget = sum(float(b.monthly_limit or 0) for b in budgets)
         
-        # 2. Fetch current month spend
-        curr_spend_query = (
-            db.query(Transaction.category, Transaction.date, Transaction.amount)
-            .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
-            .filter(Transaction.date.like(f"{current_month}%"))
+        # 2. Fetch current month spend (supports all date formats and debit/null directions)
+        current_month_dash = now.strftime("%Y-%m")
+        current_month_slash = now.strftime("%m/%Y")
+        current_month_hyphen = now.strftime("%m-%Y")
+
+        all_user_txs = (
+            db.query(Transaction.category, Transaction.date, Transaction.amount, Transaction.direction)
+            .filter(Transaction.user_id == current_user.id)
             .all()
         )
+
+        curr_spend_query = []
+        for t in all_user_txs:
+            d_str = str(getattr(t, 'date', t[1] if len(t) > 1 else '') or '')
+            dir_str = str(getattr(t, 'direction', t[3] if len(t) > 3 else '') or '').lower()
+            if dir_str == 'credit':
+                continue
+            if current_month_dash in d_str or current_month_slash in d_str or current_month_hyphen in d_str:
+                curr_spend_query.append(t)
         
         total_spend = sum(float(getattr(t, 'amount', t[2] if len(t) > 2 else 0) or 0) for t in curr_spend_query)
         

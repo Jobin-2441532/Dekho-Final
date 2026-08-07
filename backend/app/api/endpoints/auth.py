@@ -53,13 +53,17 @@ def get_current_user(
         payload = decode_token(token)
         if payload.get("type") != "access":
             raise credentials_exc
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        sub = payload.get("sub")
+        if sub is None:
             raise credentials_exc
     except JWTError:
         raise credentials_exc
 
-    user = db.query(User).filter(User.id == int(user_id)).first()
+    if isinstance(sub, int) or (isinstance(sub, str) and str(sub).isdigit()):
+        user = db.query(User).filter(User.id == int(sub)).first()
+    else:
+        user = db.query(User).filter(User.email == str(sub)).first()
+
     if not user:
         raise credentials_exc
     return user
