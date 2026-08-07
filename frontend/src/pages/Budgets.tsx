@@ -242,7 +242,7 @@ export default function Budgets() {
     </div>
   )
 
-  const h = insights.health
+  const h = insights?.health || {}
   const totalBudget = h.total_budget || 0
   const totalSpent = h.total_spend || 0
   const buffer = totalBudget - totalSpent
@@ -293,7 +293,8 @@ export default function Budgets() {
   
   // Prepare Bubble Chart data based on used amounts
   const totalUsed = h.total_spend || 1;
-  const bubbleData = insights.buckets.map((b: any) => ({
+  const bucketsList = Array.isArray(insights?.buckets) ? insights.buckets : [];
+  const bubbleData = bucketsList.map((b: any) => ({
     name: b.name,
     val: b.used,
     pct: Math.round((b.used / totalUsed) * 100)
@@ -622,7 +623,7 @@ export default function Budgets() {
               
               <div style={{ width: '100%', height: 220, marginTop: 32, position: 'relative' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={insights.pace} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                  <LineChart data={Array.isArray(insights?.pace) ? insights.pace : []} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="transparent" />
                     <XAxis dataKey="day" axisLine={true} tickLine={true} tick={{fontSize: 10, fill: '#999'}} stroke="#CCC" />
                     <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#999'}} tickFormatter={(v) => `₹${v/1000}k`} />
@@ -647,7 +648,8 @@ export default function Budgets() {
               
               <div className={styles.dumbbellList}>
                 {categoriesData.map((cat, i) => {
-                  const d = insights.trends.find((t:any) => t.section === cat.label) || { diff_pct: 0 }
+                  const trendsList = Array.isArray(insights?.trends) ? insights.trends : []
+                  const d = trendsList.find((t:any) => t.section === cat.label) || { diff_pct: 0 }
                   const isLess = d.diff_pct <= 0
                   
                   // Mock positions for dumbbell
