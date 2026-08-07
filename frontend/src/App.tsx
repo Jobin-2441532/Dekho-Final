@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import AppShell from './components/layout/AppShell'
 import DisclaimerModal from './components/ui/DisclaimerModal'
 import GlobalLoader from './components/ui/GlobalLoader'
+import { Toaster } from 'react-hot-toast'
 /* ── Auth (always needed immediately) ── */
 import Login from './pages/Login'
 
@@ -65,6 +66,7 @@ function DisclaimerWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <Toaster position="top-center" />
       {children}
       {show && <DisclaimerModal mode="splash" onClose={dismiss} />}
     </>
@@ -123,6 +125,7 @@ export default function App() {
                     <Route path="/monthly-wrap" element={<MonthlyWrap />} />
                     <Route path="/settings"     element={<Settings />} />
                     <Route path="/ask"          element={<AskDekho />} />
+                    <Route path="/loader-preview" element={<GlobalLoader />} />
 
                     {/* ── Legacy redirects ── */}
                     <Route path="/opportunities" element={<Navigate to="/grow" replace />} />

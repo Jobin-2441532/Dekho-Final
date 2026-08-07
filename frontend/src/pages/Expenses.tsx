@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Filter, Search, Edit2, Trash2, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
-import { SkeletonCard } from '../components/ui/LoadingState'
+import GlobalLoader from '../components/ui/GlobalLoader'
 import api from '../lib/api'
 import styles from './Expenses.module.css'
 
@@ -338,13 +338,7 @@ export default function Expenses() {
   const topCat = pieData.length > 0 ? pieData[0] : { category: 'None', amount: 0 }
   const topCatPct = monthTotal > 0 ? Math.round((topCat.amount / monthTotal) * 100) : 0
 
-  if (loading) return (
-    <div style={{ padding: 'var(--space-5)' }}>
-      <SkeletonCard />
-      <div style={{ height: 'var(--space-4)' }} />
-      <SkeletonCard />
-    </div>
-  )
+  if (loading) return <GlobalLoader />
 
   return (
     <div className={styles.page}>

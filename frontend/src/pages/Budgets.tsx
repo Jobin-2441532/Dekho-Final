@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Edit2, X, Wallet, Shield, Percent, ArrowLeft, Plus, Trash2 } from 'lucide-react'
-import { SkeletonCard } from '../components/ui/LoadingState'
+import GlobalLoader from '../components/ui/GlobalLoader'
+import { toast } from 'react-hot-toast'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import api from '../lib/api'
 import styles from './Budgets.module.css'
@@ -205,22 +206,28 @@ export default function Budgets() {
       budget: Number(editBudgets[sub.label]) || 0
     }))
     
-    try {
+    const processUpdate = async () => {
       await api.post('/api/v1/dashboard/budgets/bulk_update', {
         section: editSection,
         updates
       })
       setEditSection(null)
       await loadData()
+    }
+
+    try {
+      await toast.promise(processUpdate(), {
+        loading: 'Updating budgets...',
+        success: 'Budgets updated successfully!',
+        error: 'Failed to update budgets'
+      })
     } catch (err) {
       console.error("Failed to update budgets", err)
-      alert("Failed to save budget updates. Please try again.")
     }
   }
 
   const handleSetDefaultBudgets = async () => {
-    try {
-      setLoading(true)
+    const processDefault = async () => {
       await api.post('/api/v1/dashboard/budgets/bulk_update', {
         section: 'Essentials',
         updates: [
@@ -240,9 +247,17 @@ export default function Budgets() {
         ]
       })
       await loadData()
+    }
+
+    try {
+      setLoading(true)
+      await toast.promise(processDefault(), {
+        loading: 'Setting default budgets...',
+        success: 'Default budgets applied!',
+        error: 'Failed to set default budgets'
+      })
     } catch (err) {
       console.error("Failed to set default budgets", err)
-      alert("Failed to set default budgets. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -262,13 +277,7 @@ export default function Budgets() {
     return '₹' + Math.round(n).toLocaleString('en-IN');
   }
 
-  if (loading) return (
-    <div style={{ padding: 'var(--space-5)' }}>
-      <SkeletonCard />
-      <div style={{ height: 'var(--space-4)' }} />
-      <SkeletonCard />
-    </div>
-  )
+  if (loading) return <GlobalLoader />
 
   if (!insights) return (
     <div style={{ padding: 'var(--space-5)', textAlign: 'center', color: 'var(--text-secondary)', marginTop: '40px' }}>

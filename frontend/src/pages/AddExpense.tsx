@@ -3,6 +3,7 @@ import { X, Check, Calculator, ChevronDown, Calendar, Clock, Tag, Wallet, FileTe
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
+import { toast } from 'react-hot-toast'
 import styles from './AddExpense.module.css'
 
 export default function AddExpense() {
@@ -49,24 +50,29 @@ export default function AddExpense() {
     }
   }
 
-  // Handle Save
   const handleSave = async () => {
     if (amount === '0' || amount === '') return
+    
+    const savePromise = api.post('/api/v1/dashboard/transactions', {
+      amount: parseFloat(amount),
+      merchant: notes || category, // fallback to category if no notes
+      category: category === 'Select Category' ? 'Others' : category,
+      date: date, // Ideally should combine date and time for backend if supported
+      notes: notes,
+      direction: 'debit',
+      payment_mode: account === 'Select Account' ? 'Cash' : account,
+      source_type: 'Manual'
+    })
+
     try {
-      await api.post('/api/v1/dashboard/transactions', {
-        amount: parseFloat(amount),
-        merchant: notes || category, // fallback to category if no notes
-        category: category === 'Select Category' ? 'Others' : category,
-        date: date, // Ideally should combine date and time for backend if supported
-        notes: notes,
-        direction: 'debit',
-        payment_mode: account === 'Select Account' ? 'Cash' : account,
-        source_type: 'Manual'
+      await toast.promise(savePromise, {
+        loading: 'Adding expense...',
+        success: 'Expense added!',
+        error: 'Failed to add expense'
       })
       navigate(-1) // go back
     } catch (err) {
       console.error('Failed to save transaction:', err)
-      alert('Failed to save')
     }
   }
 

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Settings, Info } from 'lucide-react'
-import { SkeletonCard } from '../components/ui/LoadingState'
+import GlobalLoader from '../components/ui/GlobalLoader'
+import { toast } from 'react-hot-toast'
 import { useInsights } from '../hooks/useInsights'
 import api from '../lib/api'
 import { ReflectionCard } from '../components/ui/ReflectionCard'
@@ -128,7 +129,8 @@ export default function Home() {
     if (!smsText.trim()) return
     setIsSubmitting(true)
     setIngestStatus(null)
-    try {
+
+    const processSms = async () => {
       const token = localStorage.getItem('dekho_token') || ''
       const res = await fetch(`${API}/api/v1/ml/classify`, {
         method: 'POST',
@@ -148,6 +150,15 @@ export default function Home() {
       setIngestStatus({ type: 'success', msg: `Categorized as ${data.category} - ₹${data.amount}` })
       setSmsText('')
       fetchData() // Refresh dashboard data
+      return data
+    }
+
+    try {
+      await toast.promise(processSms(), {
+        loading: 'Adding expenses...',
+        success: 'Added expenses.',
+        error: (err) => err.message
+      })
     } catch (e: any) {
       setIngestStatus({ type: 'error', msg: e.message })
     } finally {
@@ -155,13 +166,7 @@ export default function Home() {
     }
   }
 
-  if (loading) return (
-    <div style={{ padding: 'var(--space-5)' }}>
-      <SkeletonCard />
-      <div style={{ height: 'var(--space-4)' }} />
-      <SkeletonCard />
-    </div>
-  )
+  if (loading) return <GlobalLoader />
 
   const budget    = profile?.monthlyBudget ?? profile?.monthly_budget ?? 50000
   const budgetPct  = Math.min(Math.round((monthTotal / budget) * 100), 100)
