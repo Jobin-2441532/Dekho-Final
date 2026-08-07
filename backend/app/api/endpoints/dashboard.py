@@ -496,28 +496,39 @@ def bulk_update_budgets(
     from datetime import datetime
     current_month = datetime.now().strftime("%Y-%m")
     
+    updated_count = 0
     for update in body.updates:
-        full_category = f"{update['label']}|{update['emoji']}"
+        lbl = str(update.get('label', '')).strip()
+        if not lbl:
+            continue
+        emoji = str(update.get('emoji', '💰'))
+        full_category = f"{lbl}|{emoji}"
+        limit = float(update.get('budget', 0) or 0)
+
+        # Match existing budget by label prefix or full category
         budget_row = db.query(Budget).filter(
             Budget.user_id == current_user.id, 
             Budget.month == current_month,
-            Budget.category == full_category
+            (Budget.category == full_category) | (Budget.category.like(f"{lbl}|%")) | (Budget.category == lbl)
         ).first()
         
         if budget_row:
-            budget_row.monthly_limit = update['budget']
+            budget_row.monthly_limit = limit
+            budget_row.category = full_category
+            budget_row.section = body.section
         else:
             budget_row = Budget(
                 user_id=current_user.id,
                 section=body.section,
                 category=full_category,
-                monthly_limit=update['budget'],
+                monthly_limit=limit,
                 month=current_month
             )
             db.add(budget_row)
+        updated_count += 1
             
     db.commit()
-    return {"status": "success"}
+    return {"status": "success", "count": updated_count}
 
 @router.get("/budgets/insights")
 def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

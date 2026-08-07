@@ -184,8 +184,8 @@ export default function Budgets() {
     
     const updates = sectionData.subcategories.map((sub: any) => ({
       label: sub.label,
-      emoji: sub.emoji,
-      budget: editBudgets[sub.label] || 0
+      emoji: sub.emoji || '💰',
+      budget: Number(editBudgets[sub.label]) || 0
     }))
     
     try {
@@ -194,9 +194,40 @@ export default function Budgets() {
         updates
       })
       setEditSection(null)
-      loadData()
+      await loadData()
     } catch (err) {
       console.error("Failed to update budgets", err)
+      alert("Failed to save budget updates. Please try again.")
+    }
+  }
+
+  const handleSetDefaultBudgets = async () => {
+    try {
+      setLoading(true)
+      await api.post('/api/v1/dashboard/budgets/bulk_update', {
+        section: 'Essentials',
+        updates: [
+          { label: 'Food & Dining', emoji: '🍴', budget: 10000 },
+          { label: 'Groceries', emoji: '🛒', budget: 6000 },
+          { label: 'Housing & Household', emoji: '🏠', budget: 12000 },
+          { label: 'Utilities', emoji: '⚡', budget: 4000 },
+          { label: 'Transport', emoji: '🚗', budget: 3000 },
+        ]
+      })
+      await api.post('/api/v1/dashboard/budgets/bulk_update', {
+        section: 'Lifestyle',
+        updates: [
+          { label: 'Shopping', emoji: '🛍️', budget: 5000 },
+          { label: 'Entertainment', emoji: '🎬', budget: 3000 },
+          { label: 'Subscriptions', emoji: '📺', budget: 2000 },
+        ]
+      })
+      await loadData()
+    } catch (err) {
+      console.error("Failed to set default budgets", err)
+      alert("Failed to set default budgets. Please try again.")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -372,6 +403,22 @@ export default function Budgets() {
 
           <div className={styles.px}>
             <p className={styles.sectionTitle}>Your Budget</p>
+
+            {totalBudget === 0 && (
+              <div style={{ padding: '14px 16px', background: '#FFF7ED', borderRadius: '12px', border: '1px solid #FFEDD5', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <div>
+                  <p style={{ fontWeight: '600', fontSize: '13px', color: '#5A3825', margin: 0 }}>No budgets configured yet</p>
+                  <p style={{ fontSize: '11px', color: '#7C2D12', margin: '2px 0 0 0' }}>Click "Set Defaults" for a recommended ₹35,000 monthly budget or use the edit icons below.</p>
+                </div>
+                <button 
+                  onClick={handleSetDefaultBudgets}
+                  style={{ padding: '8px 14px', background: '#5A3825', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  Set Defaults
+                </button>
+              </div>
+            )}
+
             <div className={styles.categoryList}>
               {categoriesData.map((cat) => {
                 const cPct = Math.min(Math.round((cat.spent / (cat.budget || 1)) * 100), 100)
