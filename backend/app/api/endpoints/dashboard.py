@@ -514,173 +514,198 @@ def bulk_update_budgets(
                 monthly_limit=update['budget'],
                 month=current_month
             )
-            db.add(budget_row)
-            
-    db.commit()
-    return {"status": "success"}
-
-@router.get("/budgets/insights")
+       @router.get("/budgets/insights")
 def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     from datetime import datetime
     import calendar
-    
-    now = datetime.now()
-    current_month = now.strftime("%Y-%m")
-    
-    # Calculate previous month
-    if now.month == 1:
-        prev_month = f"{now.year - 1}-12"
-    else:
-        prev_month = f"{now.year}-{now.month - 1:02d}"
+    from app.core.logging_config import logger
+
+    try:
+        now = datetime.now()
+        current_month = now.strftime("%Y-%m")
         
-    days_in_month = calendar.monthrange(now.year, now.month)[1]
-    days_passed = now.day
-    days_remaining = days_in_month - days_passed
-    
-    # 1. Fetch current month budgets
-    budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == current_month).all()
-    total_budget = sum(b.monthly_limit for b in budgets)
-    
-    # 2. Fetch current month spend
-    curr_spend_query = (
-        db.query(Transaction.category, Transaction.date, Transaction.amount)
-        .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
-        .filter(Transaction.date.like(f"{current_month}%"))
-        .all()
-    )
-    
-    total_spend = sum(t.amount for t in curr_spend_query)
-    
-    # Pace tracking logic
-    daily_spend = {day: 0.0 for day in range(1, days_in_month + 1)}
-    for t in curr_spend_query:
-        try:
-            day = int(t.date.split("-")[2][:2])
-            daily_spend[day] += t.amount
-        except:
-            pass
-            
-    pace_data = []
-    cumulative_spend = 0.0
-    ideal_daily = total_budget / days_in_month if total_budget > 0 else 0
-    
-    for day in range(1, days_in_month + 1):
-        if day <= days_passed:
-            cumulative_spend += daily_spend[day]
-            pace_data.append({
-                "day": day,
-                "ideal": ideal_daily * day,
-                "actual": cumulative_spend
-            })
+        # Calculate previous month
+        if now.month == 1:
+            prev_month = f"{now.year - 1}-12"
         else:
-            pace_data.append({
-                "day": day,
-                "ideal": ideal_daily * day,
-                "actual": None
-            })
+            prev_month = f"{now.year}-{now.month - 1:02d}"
             
-    # Category mapping helper
-    def map_to_sections(spend_rows, budget_rows):
-        res = {
-            "Essentials": {"allocated": 0, "used": 0},
-            "Lifestyle": {"allocated": 0, "used": 0},
-            "Future-oriented": {"allocated": 0, "used": 0},
-            "Buffer": {"allocated": 0, "used": 0},
-        }
+        days_in_month = calendar.monthrange(now.year, now.month)[1]
+        days_passed = now.day
+        days_remaining = days_in_month - days_passed
         
-        # map budgets
-        b_map = {}
-        for b in budget_rows:
-            label = b.category.split("|")[0]
-            b_map[label] = b.section
-            if b.section in res:
-                res[b.section]["allocated"] += b.monthly_limit
-            
-        # map spend
-        for row in spend_rows:
-            # handle the simple structure or full object
-            cat = getattr(row, 'category', row[0])
-            
-            # Figure out amount safely.
-            # curr_spend_query returns (category, date, amount) -> len 3
-            # prev_spend_query returns (category, total) -> len 2
-            if hasattr(row, 'amount'):
-                amt = row.amount
-            elif len(row) > 2:
-                amt = row[2]  # from curr_spend_query
+        # 1. Fetch current month budgets
+        budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == current_month).all()
+        total_budget = sum(float(b.monthly_limit or 0) for b in budgets)
+        
+        # 2. Fetch current month spend
+        curr_spend_query = (
+            db.query(Transaction.category, Transaction.date, Transaction.amount)
+            .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
+            .filter(Transaction.date.like(f"{current_month}%"))
+            .all()
+        )
+        
+        total_spend = sum(float(getattr(t, 'amount', t[2] if len(t) > 2 else 0) or 0) for t in curr_spend_query)
+        
+        # Pace tracking logic
+        daily_spend = {day: 0.0 for day in range(1, days_in_month + 1)}
+        for t in curr_spend_query:
+            try:
+                date_str = str(getattr(t, 'date', t[1] if len(t) > 1 else ''))
+                amt = float(getattr(t, 'amount', t[2] if len(t) > 2 else 0) or 0)
+                day = int(date_str.split("-")[2][:2])
+                if day in daily_spend:
+                    daily_spend[day] += amt
+            except Exception:
+                pass
+                
+        pace_data = []
+        cumulative_spend = 0.0
+        ideal_daily = float(total_budget) / days_in_month if total_budget > 0 else 0.0
+        
+        for day in range(1, days_in_month + 1):
+            if day <= days_passed:
+                cumulative_spend += daily_spend[day]
+                pace_data.append({
+                    "day": day,
+                    "ideal": round(ideal_daily * day, 2),
+                    "actual": round(cumulative_spend, 2)
+                })
             else:
-                amt = row[1]  # from prev_spend_query
+                pace_data.append({
+                    "day": day,
+                    "ideal": round(ideal_daily * day, 2),
+                    "actual": None
+                })
                 
-            # Match
-            matched = False
-            for b_label, b_section in b_map.items():
-                if cat == b_label or (b_label == "Housing & Household" and cat in ["Housing", "Household"]):
-                    if b_section in res:
-                        res[b_section]["used"] += amt
-                    matched = True
-                    break
-            
-            if not matched:
-                res["Buffer"]["used"] += amt
-                
-        return res
-
-    curr_sections = map_to_sections(curr_spend_query, budgets)
-    
-    # 3. Fetch prev month spend & budgets for trends
-    prev_budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == prev_month).all()
-    prev_spend_query = (
-        db.query(Transaction.category, func.sum(Transaction.amount).label("total"))
-        .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
-        .filter(Transaction.date.like(f"{prev_month}%"))
-        .group_by(Transaction.category)
-        .all()
-    )
-    
-    prev_sections = map_to_sections(prev_spend_query, prev_budgets)
-    
-    trends = []
-    for section in curr_sections.keys():
-        curr_used = curr_sections[section]["used"]
-        prev_used = prev_sections[section]["used"]
-        
-        diff_pct = 0
-        if prev_used > 0:
-            diff_pct = ((curr_used - prev_used) / prev_used) * 100
-        elif curr_used > 0:
-            diff_pct = 100
-            
-        trends.append({
-            "section": section,
-            "current": curr_used,
-            "previous": prev_used,
-            "diff_pct": round(diff_pct)
-        })
-
-    return {
-        "health": {
-            "total_budget": total_budget,
-            "total_spend": total_spend,
-            "remaining": total_budget - total_spend,
-            "days_remaining": days_remaining,
-            "safe_daily": (total_budget - total_spend) / days_remaining if days_remaining > 0 else 0,
-            "utilization": (total_spend / total_budget * 100) if total_budget > 0 else 0
-        },
-        "buckets": [
-            {"name": k, "allocated": v["allocated"], "used": v["used"]}
-            for k, v in curr_sections.items()
-        ],
-        "pace": pace_data,
-        "trends": trends,
-        "raw_budgets": [{"category": b.category, "monthly_limit": b.monthly_limit} for b in budgets],
-        "raw_spend": [
-            {
-                "category": getattr(t, 'category', t[0]),
-                "amount": getattr(t, 'amount', t[2] if isinstance(t, tuple) and len(t) > 2 else t[1] if isinstance(t, tuple) and len(t) > 1 else 0)
+        # Category mapping helper
+        def map_to_sections(spend_rows, budget_rows):
+            res = {
+                "Essentials": {"allocated": 0.0, "used": 0.0},
+                "Lifestyle": {"allocated": 0.0, "used": 0.0},
+                "Future-oriented": {"allocated": 0.0, "used": 0.0},
+                "Buffer": {"allocated": 0.0, "used": 0.0},
             }
-            for t in curr_spend_query
-        ]
-    }
+            
+            # map budgets
+            b_map = {}
+            for b in budget_rows:
+                cat_str = str(b.category or '')
+                label = cat_str.split("|")[0]
+                b_map[label] = b.section
+                if b.section in res:
+                    res[b.section]["allocated"] += float(b.monthly_limit or 0)
+                
+            # map spend
+            for row in spend_rows:
+                cat = str(getattr(row, 'category', row[0] if len(row) > 0 else ''))
+                
+                # Convert raw decimal/float to python float safely
+                if hasattr(row, 'amount') and row.amount is not None:
+                    amt = float(row.amount)
+                elif len(row) > 2 and row[2] is not None:
+                    amt = float(row[2])
+                elif len(row) > 1 and row[1] is not None:
+                    amt = float(row[1])
+                else:
+                    amt = 0.0
+                    
+                matched = False
+                for b_label, b_section in b_map.items():
+                    if cat == b_label or (b_label == "Housing & Household" and cat in ["Housing", "Household"]):
+                        if b_section in res:
+                            res[b_section]["used"] += amt
+                        matched = True
+                        break
+                
+                if not matched:
+                    res["Buffer"]["used"] += amt
+                    
+            return res
+
+        curr_sections = map_to_sections(curr_spend_query, budgets)
+        
+        # 3. Fetch prev month spend & budgets for trends
+        prev_budgets = db.query(Budget).filter(Budget.user_id == current_user.id, Budget.month == prev_month).all()
+        prev_spend_query = (
+            db.query(Transaction.category, func.sum(Transaction.amount).label("total"))
+            .filter(Transaction.user_id == current_user.id, Transaction.direction == "debit")
+            .filter(Transaction.date.like(f"{prev_month}%"))
+            .group_by(Transaction.category)
+            .all()
+        )
+        
+        prev_sections = map_to_sections(prev_spend_query, prev_budgets)
+        
+        trends = []
+        for section in curr_sections.keys():
+            curr_used = float(curr_sections[section]["used"])
+            prev_used = float(prev_sections[section]["used"])
+            
+            diff_pct = 0.0
+            if prev_used > 0:
+                diff_pct = ((curr_used - prev_used) / prev_used) * 100
+            elif curr_used > 0:
+                diff_pct = 100.0
+                
+            trends.append({
+                "section": section,
+                "current": round(curr_used, 2),
+                "previous": round(prev_used, 2),
+                "diff_pct": round(diff_pct)
+            })
+
+        rem = float(total_budget - total_spend)
+        safe = float(rem / days_remaining) if days_remaining > 0 else 0.0
+        util = float((total_spend / total_budget) * 100) if total_budget > 0 else 0.0
+
+        return {
+            "health": {
+                "total_budget": round(total_budget, 2),
+                "total_spend": round(total_spend, 2),
+                "remaining": round(rem, 2),
+                "days_remaining": days_remaining,
+                "safe_daily": round(safe, 2),
+                "utilization": round(util, 2)
+            },
+            "buckets": [
+                {"name": k, "allocated": round(v["allocated"], 2), "used": round(v["used"], 2)}
+                for k, v in curr_sections.items()
+            ],
+            "pace": pace_data,
+            "trends": trends,
+            "raw_budgets": [{"category": str(b.category or ''), "monthly_limit": float(b.monthly_limit or 0)} for b in budgets],
+            "raw_spend": [
+                {
+                    "category": str(getattr(t, 'category', t[0] if len(t) > 0 else '')),
+                    "amount": float(getattr(t, 'amount', t[2] if len(t) > 2 else t[1] if len(t) > 1 else 0) or 0)
+                }
+                for t in curr_spend_query
+            ]
+        }
+    except Exception as exc:
+        logger.error(f"Error in get_budget_insights: {exc}", exc_info=True)
+        return {
+            "health": {
+                "total_budget": 0.0,
+                "total_spend": 0.0,
+                "remaining": 0.0,
+                "days_remaining": 30,
+                "safe_daily": 0.0,
+                "utilization": 0.0
+            },
+            "buckets": [
+                {"name": "Essentials", "allocated": 0.0, "used": 0.0},
+                {"name": "Lifestyle", "allocated": 0.0, "used": 0.0},
+                {"name": "Future-oriented", "allocated": 0.0, "used": 0.0},
+                {"name": "Buffer", "allocated": 0.0, "used": 0.0}
+            ],
+            "pace": [],
+            "trends": [],
+            "raw_budgets": [],
+            "raw_spend": []
+        }
 
 # ---------------------------------------------------------------------------
 # Summary (all-time category totals)
