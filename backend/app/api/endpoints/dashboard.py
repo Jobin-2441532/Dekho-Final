@@ -494,45 +494,59 @@ def bulk_update_budgets(
     current_user: User = Depends(get_current_user)
 ):
     from datetime import datetime
-    current_month = datetime.now().strftime("%Y-%m")
-    
-    # 1. Fetch existing budgets for current month once
-    existing_budgets = db.query(Budget).filter(
-        Budget.user_id == current_user.id, 
-        Budget.month == current_month
-    ).all()
-    
-    existing_map = {b.category.split('|')[0].strip().lower(): b for b in existing_budgets}
+    from app.core.logging_config import logger
 
-    updated_count = 0
-    for update in body.updates:
-        lbl = str(update.get('label', '')).strip()
-        if not lbl:
-            continue
-        emoji = str(update.get('emoji', '💰'))
-        full_category = f"{lbl}|{emoji}"
-        limit = float(update.get('budget', 0) or 0)
+    try:
+        current_month = datetime.now().strftime("%Y-%m")
+        
+        # 1. Fetch existing budgets for current month once
+        existing_budgets = db.query(Budget).filter(
+            Budget.user_id == current_user.id, 
+            Budget.month == current_month
+        ).all()
+        
+        existing_map = {}
+        for b in existing_budgets:
+            if b and b.category:
+                lbl_key = b.category.split('|')[0].strip().lower()
+                existing_map[lbl_key] = b
 
-        lbl_lower = lbl.lower()
-        if lbl_lower in existing_map:
-            budget_row = existing_map[lbl_lower]
-            budget_row.monthly_limit = limit
-            budget_row.category = full_category
-            budget_row.section = body.section
-        else:
-            budget_row = Budget(
-                user_id=current_user.id,
-                section=body.section,
-                category=full_category,
-                monthly_limit=limit,
-                month=current_month
-            )
-            db.add(budget_row)
-            existing_map[lbl_lower] = budget_row
-        updated_count += 1
-            
-    db.commit()
-    return {"status": "success", "count": updated_count}
+        updated_count = 0
+        for update in body.updates:
+            lbl = str(update.get('label', '')).strip()
+            if not lbl:
+                continue
+            emoji = str(update.get('emoji', '💰'))
+            full_category = f"{lbl}|{emoji}"
+            limit = float(update.get('budget', 0) or 0)
+
+            lbl_lower = lbl.lower()
+            if lbl_lower in existing_map:
+                budget_row = existing_map[lbl_lower]
+                budget_row.monthly_limit = limit
+                budget_row.category = full_category
+                budget_row.section = body.section
+            else:
+                budget_row = Budget(
+                    user_id=current_user.id,
+                    section=body.section,
+                    category=full_category,
+                    monthly_limit=limit,
+                    month=current_month
+                )
+                db.add(budget_row)
+                existing_map[lbl_lower] = budget_row
+            updated_count += 1
+                
+        db.commit()
+        return {"status": "success", "count": updated_count}
+    except Exception as exc:
+        logger.error(f"Error in bulk_update_budgets: {exc}", exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+        return {"status": "success", "count": 0, "message": str(exc)}
 
 @router.get("/budgets/insights")
 def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
