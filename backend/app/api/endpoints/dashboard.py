@@ -497,20 +497,26 @@ def bulk_update_budgets(
     from app.core.logging_config import logger
 
     try:
+        from app.core.database import engine
         from sqlalchemy import text
         current_month = datetime.now().strftime("%Y-%m")
         
-        # Ensure database schema has section column
+        # 0. Reset any pending transaction state
         try:
-            from app.core.database import engine
+            db.rollback()
+        except Exception:
+            pass
+
+        # 1. Ensure database schema has section column
+        try:
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
                 conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
                 conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Schema update notice: {e}")
 
-        # 1. Fetch existing budgets for current month once
+        # 2. Fetch existing budgets for current month once
         existing_budgets = db.query(Budget).filter(
             Budget.user_id == current_user.id, 
             Budget.month == current_month
@@ -571,15 +577,21 @@ def get_budget_insights(db: Session = Depends(get_db), current_user: User = Depe
         now = datetime.now()
         current_month = now.strftime("%Y-%m")
         
-        # Ensure database schema has section column
+        # 0. Reset any pending transaction state
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+        # 1. Ensure database schema has section column
         try:
             from app.core.database import engine
             with engine.begin() as conn:
                 conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS section VARCHAR(64) DEFAULT 'Buffer';"))
                 conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS monthly_limit DOUBLE PRECISION DEFAULT 0.0;"))
                 conn.execute(text("ALTER TABLE budgets ADD COLUMN IF NOT EXISTS month VARCHAR(7) DEFAULT '2026-08';"))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Schema update notice: {e}")
 
         # Calculate previous month
         if now.month == 1:
