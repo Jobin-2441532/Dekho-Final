@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import DisclaimerModal from './components/ui/DisclaimerModal'
-
+import GlobalLoader from './components/ui/GlobalLoader'
 /* ── Auth (always needed immediately) ── */
 import Login from './pages/Login'
 
@@ -35,15 +35,7 @@ const MonthlyWrap = lazy(() => import('./pages/MonthlyWrap'))
 const Settings    = lazy(() => import('./pages/Settings'))
 const AskDekho    = lazy(() => import('./pages/AskDekho'))
 
-/* ── Tiny spinner for Suspense fallback ── */
-function PageLoader() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh' }}>
-      <div style={{ width: 28, height: 28, borderRadius: '50%', border: '3px solid var(--color-primary)', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
-}
+
 
 /* ── Auth guard — checks for JWT token ── */
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -94,7 +86,7 @@ export default function App() {
             <RequireAuth>
               <DisclaimerWrapper>
               <AppShell>
-                <Suspense fallback={<PageLoader />}>
+                <Suspense fallback={<GlobalLoader />}>
                   <Routes>
                     {/* Default redirect */}
                     <Route path="/" element={<Navigate to="/home" replace />} />
