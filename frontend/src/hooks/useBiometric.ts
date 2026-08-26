@@ -101,13 +101,17 @@ export function useBiometric() {
       const challenge = new Uint8Array(32)
       crypto.getRandomValues(challenge)
 
-      // Convert stored base64url string ID back to Uint8Array buffer
-      // (Simplified: normally we'd base64 decode, but for local-only gating, 
-      // some browsers allow passing an empty allowCredentials list to just ask for ANY local passkey)
-      
+      // Decode the stored base64url credential ID back into raw bytes so we ask
+      // for THIS specific device credential, rather than relying on discoverable
+      // credential lookup (which some browsers can't resolve reliably by rp.id alone).
+      const base64 = storedCredId.replace(/-/g, '+').replace(/_/g, '/')
+      const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4)
+      const raw = Uint8Array.from(atob(padded), c => c.charCodeAt(0))
+
       const getOptions: PublicKeyCredentialRequestOptions = {
         challenge,
         userVerification: 'required',
+        allowCredentials: [{ id: raw, type: 'public-key' }],
       }
 
       const assertion = await navigator.credentials.get({
