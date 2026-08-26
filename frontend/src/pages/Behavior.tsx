@@ -48,8 +48,8 @@ export default function Behavior() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.get<Transaction[]>('/api/transactions')
-      .then(setTransactions)
+    api.get<{ data: Transaction[] }>('/api/v1/dashboard/transactions', { limit: 500 })
+      .then(res => setTransactions(res.data))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
@@ -104,8 +104,10 @@ export default function Behavior() {
               value={Math.abs(aprilTotal - marchTotal)}
               size="md"
               change={{
-                value: `${Math.round(Math.abs((aprilTotal - marchTotal) / marchTotal) * 100)}% less than March`,
-                direction: 'down',
+                value: marchTotal > 0
+                  ? `${Math.round(Math.abs((aprilTotal - marchTotal) / marchTotal) * 100)}% ${aprilTotal >= marchTotal ? 'more' : 'less'} than March`
+                  : 'No March data to compare',
+                direction: aprilTotal >= marchTotal ? 'up' : 'down',
               }}
               subtext="Comparing Apr pace vs Mar full"
             />

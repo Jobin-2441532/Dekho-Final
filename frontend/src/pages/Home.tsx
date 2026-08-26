@@ -170,8 +170,11 @@ export default function Home() {
 
   const budget    = profile?.monthlyBudget ?? profile?.monthly_budget ?? 50000
   const budgetPct  = Math.min(Math.round((monthTotal / budget) * 100), 100)
-  const goalPct    = savingGoals.length > 0
-    ? Math.min(Math.round((savingGoals[0].current_amount / savingGoals[0].target_amount) * 100), 100) : 42
+  const firstGoal  = savingGoals[0]
+  const goalTarget = firstGoal?.targetAmount ?? firstGoal?.target_amount ?? 0
+  const goalCurrent = firstGoal?.currentAmount ?? firstGoal?.current_amount ?? 0
+  const goalPct    = firstGoal && goalTarget > 0
+    ? Math.min(Math.round((goalCurrent / goalTarget) * 100), 100) : 0
   const remaining  = Math.max(budget - monthTotal, 0)
   const isOverBudget = monthTotal > budget
   
