@@ -20,6 +20,7 @@ interface WealthProfile {
   trend: { label: string; value: number }[]
   movement: { merchant: string; category: string; date: string; amount: number; isPositive: boolean }[]
   hasAssets: boolean
+  isSample: boolean
 }
 
 /* Mini sparkline using SVG */
@@ -86,7 +87,18 @@ export default function Assets() {
       {/* ── Net Worth Hero ── */}
       <div className={styles.px}>
         <div className={styles.heroCard}>
-          <p className={styles.heroLabel}>NET WORTH</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <p className={styles.heroLabel}>NET WORTH</p>
+            {data.isSample && (
+              <span style={{
+                fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 600,
+                letterSpacing: '0.02em', color: 'rgba(255,255,255,0.9)',
+                background: 'rgba(255,255,255,0.16)', padding: '3px 9px', borderRadius: '999px',
+              }}>
+                SAMPLE DATA
+              </span>
+            )}
+          </div>
           <h1 className={styles.heroAmount}>{fmt(data.netWorth)}</h1>
           <div className={styles.heroChange}>
             <span className={styles.heroPct}>{data.cashflowDelta >= 0 ? '↗' : '↘'} {fmt(Math.abs(data.cashflowDelta))}</span>

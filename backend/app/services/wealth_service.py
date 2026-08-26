@@ -42,10 +42,21 @@ def _sum_debits(txs, categories: set[str] | None = None) -> float:
     )
 
 
+# Shown only when an account has no Asset rows at all — clearly labeled to the
+# user as sample data (via `isSample`), never blended silently with real numbers.
+SAMPLE_SAVINGS = 42000.0
+SAMPLE_INVESTMENTS = 68500.0
+
+
 def compute_wealth_profile(db: Session, user: User) -> dict:
     assets = db.query(Asset).filter(Asset.user_id == user.id).all()
-    savings_total = sum(a.value for a in assets if (a.type or "").lower() in SAVINGS_ASSET_TYPES)
-    investments_total = sum(a.value for a in assets if (a.type or "").lower() in INVESTMENT_ASSET_TYPES)
+    is_sample = len(assets) == 0
+    if is_sample:
+        savings_total = SAMPLE_SAVINGS
+        investments_total = SAMPLE_INVESTMENTS
+    else:
+        savings_total = sum(a.value for a in assets if (a.type or "").lower() in SAVINGS_ASSET_TYPES)
+        investments_total = sum(a.value for a in assets if (a.type or "").lower() in INVESTMENT_ASSET_TYPES)
     net_worth = savings_total + investments_total
 
     snap = financial_snapshot(db, user)
@@ -78,7 +89,9 @@ def compute_wealth_profile(db: Session, user: User) -> dict:
             attention = f"Your credit card / EMI spending grew {round(pct)}% this month — worth reviewing before it compounds."
 
     # Narrative for the hero card
-    if investment_contribution > 0 and cashflow_delta > 0:
+    if is_sample:
+        narrative = "This is sample data. Add your savings and investments in Settings to see your real net worth here."
+    elif investment_contribution > 0 and cashflow_delta > 0:
         narrative = f"You added ₹{round(investment_contribution):,} to investments — a solid month."
     elif cashflow_delta > 0:
         narrative = "You came out ahead this month — income outpaced spending."
@@ -133,4 +146,5 @@ def compute_wealth_profile(db: Session, user: User) -> dict:
         "trend": trend,
         "movement": movement,
         "hasAssets": len(assets) > 0,
+        "isSample": is_sample,
     }
