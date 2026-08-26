@@ -109,24 +109,28 @@ def compute_grow_profile(db: Session, user: User) -> dict:
             "label": "3+ months emergency fund",
             "done": emergency_fund_met,
             "detail": f"{snap['months_covered']} months covered" if snap["monthly_expense_estimate"] else "Add income/budget info to calculate this",
+            "progress": min(snap["months_covered"] / 3, 1) if snap["monthly_expense_estimate"] else 0,
         },
         {
             "key": "savings_rate",
             "label": "Consistent monthly savings > 20%",
             "done": savings_rate_met,
             "detail": f"{int(savings_rate * 100)}% saved in the last 30 days" if savings_rate is not None else "Log some transactions to calculate this",
+            "progress": min(savings_rate / 0.2, 1) if savings_rate is not None else 0,
         },
         {
             "key": "income_stability",
             "label": "Income logged for 6+ months",
             "done": stable_income,
             "detail": f"{len(snap['income_months'])} of 6 months logged",
+            "progress": min(len(snap["income_months"]) / 6, 1),
         },
         {
             "key": "active_goal",
             "label": "At least one active savings goal",
             "done": has_active_goals,
             "detail": f"{len(snap['active_goals'])} active goal(s)" if has_active_goals else "No goals set yet",
+            "progress": 1.0 if has_active_goals else 0.0,
         },
     ]
 

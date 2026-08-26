@@ -53,9 +53,12 @@
 .guardrailCard { background: var(--color-warning-bg); border-radius: var(--radius-xl); padding: var(--space-6); display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-3); }
 .guardrailTitle { font-family: var(--font-headline); font-size: var(--text-2xl); font-weight: var(--font-bold); color: var(--color-on-surface); }
 .guardrailSub { font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-on-surface-var); line-height: 1.6; }
-.guardrailTrack { height: 10px; background: var(--bg-surface-high); border-radius: var(--radius-full); width: 100%; }
-.guardrailFill { height: 100%; background: var(--color-warning); border-radius: var(--radius-full); }
 .guardrailPct { font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-warning); font-weight: var(--font-semibold); }
+
+/* Readiness gauge (radial) */
+.gaugeWrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-1); }
+.gaugeValue { font-family: var(--font-headline); font-size: var(--text-2xl); font-weight: var(--font-bold); fill: var(--color-on-surface); }
+.gaugeCaption { font-family: var(--font-body); font-size: var(--text-xs); color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Checklist */
 .checkList { display: flex; flex-direction: column; gap: var(--space-3); }
@@ -63,6 +66,13 @@
 .checkDone { opacity: 0.7; }
 .checkCircle { width: 18px; height: 18px; border-radius: var(--radius-full); border: 2px solid var(--color-outline-var); flex-shrink: 0; }
 .checkLabel { font-family: var(--font-body); font-size: var(--text-sm); color: var(--color-on-surface); }
+.checkBody { flex: 1; min-width: 0; }
+.checkTrack { height: 5px; background: var(--bg-surface-high); border-radius: var(--radius-full); overflow: hidden; margin-top: var(--space-2); }
+.checkFill { height: 100%; width: 100%; border-radius: var(--radius-full); transform-origin: left; transition: transform var(--transition-slow); }
+.checkDetail { font-family: var(--font-body); font-size: 11px; color: var(--color-muted); margin-top: 4px; display: block; }
+
+/* Mini emergency-fund gauge on GrowHome */
+.statusRow { display: flex; align-items: center; gap: var(--space-3); }
 
 /* CTA button */
 .ctaBtn { width: 100%; background: var(--color-primary); color: var(--color-on-primary); border: none; border-radius: 99px; padding: var(--space-4) var(--space-5); font-family: var(--font-headline); font-size: var(--text-base); font-weight: var(--font-bold); cursor: pointer; box-shadow: var(--shadow-md); line-height: 1.4; text-align: center; transition: opacity var(--transition-fast), transform var(--transition-fast); }

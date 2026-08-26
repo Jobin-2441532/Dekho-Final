@@ -12,6 +12,43 @@ interface ChecklistItem {
   label: string
   done: boolean
   detail: string
+  progress: number
+}
+
+/* Radial progress gauge — SVG stroke-dasharray, themed via CSS custom properties
+   so it follows the app's palette (and dark mode) instead of hardcoded colors. */
+function RadialGauge({
+  pct, size = 96, strokeWidth = 9, color = 'var(--color-primary)',
+  caption, showValue = true,
+}: { pct: number; size?: number; strokeWidth?: number; color?: string; caption?: string; showValue?: boolean }) {
+  const r = (size - strokeWidth) / 2
+  const c = 2 * Math.PI * r
+  const clamped = Math.max(0, Math.min(100, pct))
+  const offset = c * (1 - clamped / 100)
+
+  return (
+    <div className={styles.gaugeWrap}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none" stroke="var(--bg-surface-high)" strokeWidth={strokeWidth}
+        />
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none" stroke={color} strokeWidth={strokeWidth}
+          strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round"
+          transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.16,1,0.3,1)' }}
+        />
+        {showValue && (
+          <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className={styles.gaugeValue} style={{ fontSize: size * 0.24 }}>
+            {Math.round(clamped)}%
+          </text>
+        )}
+      </svg>
+      {caption && <span className={styles.gaugeCaption}>{caption}</span>}
+    </div>
+  )
 }
 
 interface GrowProfile {
@@ -110,13 +147,17 @@ function GrowHome({ profile }: { profile: GrowProfile }) {
           <h1 className={styles.actionTitle}>Your next growth step</h1>
 
         <div className={styles.readinessBadge}>
-          <Sparkles size={18} className={styles.readinessIcon} strokeWidth={2} />
+          <RadialGauge
+            pct={Math.min(profile.emergencyFund.monthsCovered / 3, 1) * 100}
+            size={56} strokeWidth={6} showValue={false}
+            color={profile.emergencyFund.monthsCovered >= 3 ? 'var(--color-positive)' : 'var(--color-primary)'}
+          />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className={styles.readinessBadgeLabel}>YOUR STATUS</span>
+            <span className={styles.readinessBadgeLabel}>EMERGENCY FUND</span>
             <span className={styles.readinessBadgeText}>
               {profile.emergencyFund.monthsCovered >= 3
-                ? `Your emergency fund covers ${profile.emergencyFund.monthsCovered} months — you're in a good position to explore investing.`
-                : `Your emergency fund covers ${profile.emergencyFund.monthsCovered} months. Building it toward 3 months is a strong next step.`}
+                ? `${profile.emergencyFund.monthsCovered} months covered — a good position to explore investing.`
+                : `${profile.emergencyFund.monthsCovered} of 3 months covered. Building toward 3 is a strong next step.`}
             </span>
           </div>
         </div>
@@ -210,10 +251,8 @@ function ReadinessGuardrail({ profile }: { profile: GrowProfile }) {
           <p className={styles.guardrailSub}>
             Complete a few financial health checks before you start growing your wealth.
           </p>
-          <div className={styles.guardrailTrack}>
-            <div className={styles.guardrailFill} style={{ width: `${pct}%` }} />
-          </div>
-          <p className={styles.guardrailPct}>{doneCount} of {profile.checklist.length} criteria met ({pct}%)</p>
+          <RadialGauge pct={pct} size={120} strokeWidth={11} color="var(--color-warning)" />
+          <p className={styles.guardrailPct}>{doneCount} of {profile.checklist.length} criteria met</p>
         </div>
       </div>
 
@@ -227,9 +266,18 @@ function ReadinessGuardrail({ profile }: { profile: GrowProfile }) {
                 ? <CheckCircle2 size={18} color="var(--color-positive)" strokeWidth={1.75} />
                 : <div className={styles.checkCircle} />
               }
-              <div>
+              <div className={styles.checkBody}>
                 <p className={styles.checkLabel}>{item.label}</p>
-                <p className={styles.recWhy} style={{ margin: 0 }}>{item.detail}</p>
+                <div className={styles.checkTrack}>
+                  <div
+                    className={styles.checkFill}
+                    style={{
+                      transform: `scaleX(${item.progress})`,
+                      background: item.done ? 'var(--color-positive)' : 'var(--color-warning)',
+                    }}
+                  />
+                </div>
+                <span className={styles.checkDetail}>{item.detail}</span>
               </div>
             </div>
           ))}
