@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'react-hot-toast'
 import api from '../lib/api'
 import styles from './ReviewQueue.module.css'
 
@@ -58,7 +59,7 @@ export default function ReviewQueue() {
       })
       setTxs(prev => prev.filter(t => t.id !== tx.id))
     } catch {
-      alert('Failed to approve')
+      toast.error("Couldn't save — the categorization service is unavailable. Try again shortly.")
     }
   }
 

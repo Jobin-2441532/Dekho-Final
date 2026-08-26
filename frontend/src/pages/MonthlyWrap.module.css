@@ -1,0 +1,291 @@
+.loadingPage {
+  position: fixed;
+  inset: 0;
+  background: #2a1d17;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.spinner { color: #fff; animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: var(--slide-grad);
+  transition: background 0.5s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Subtle grain — gives every slide's background texture instead of a flat
+   gradient, so slides feel crafted even before content animates in. */
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px);
+  background-size: 22px 22px;
+  animation: grainDrift 10s linear infinite;
+}
+@keyframes grainDrift {
+  from { transform: translate(0, 0); }
+  to { transform: translate(22px, 14px); }
+}
+
+/* Large faint emoji watermark behind each slide's content — fills the frame
+   with atmosphere specific to that slide instead of empty flat color. */
+.bigMark {
+  position: absolute;
+  z-index: 1;
+  bottom: -8%;
+  right: -6%;
+  font-size: 46vw;
+  line-height: 1;
+  opacity: 0.07;
+  filter: blur(1px);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Progress bars (IG/Spotify story style) ── */
+.progressRow {
+  display: flex;
+  gap: 4px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 12px 0;
+  z-index: 10;
+}
+.progressTrack {
+  flex: 1;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  background: #fff;
+  border-radius: 99px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 0;
+  z-index: 10;
+}
+.period {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.04em;
+}
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ── Tap zones ── */
+.tapZoneLeft, .tapZoneRight {
+  position: absolute;
+  top: 60px;
+  bottom: 80px;
+  width: 35%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 5;
+}
+.tapZoneLeft { left: 0; }
+.tapZoneRight { right: 0; }
+
+/* ── Ambient background motion ── */
+.orbLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 70%);
+  filter: blur(4px);
+}
+
+/* ── Confetti (finale only) ── */
+.confettiLayer {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  z-index: 4;
+  pointer-events: none;
+}
+.confettiDot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: block;
+}
+
+/* ── Slide content ── */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 28px;
+  z-index: 3;
+}
+.contentInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.emoji {
+  font-size: 56px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+}
+.label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 12px;
+}
+.headline {
+  font-family: 'Fraunces', var(--font-headline), serif;
+  font-size: 32px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  max-width: 340px;
+  text-wrap: balance;
+}
+.sub {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+  margin-top: 14px;
+  max-width: 300px;
+}
+
+/* ── Growing underline bar — under a big-number slide ── */
+.numberBar {
+  width: 100%;
+  max-width: 260px;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  margin-top: 20px;
+}
+.numberBarFill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #c9a15a, #e2ab86);
+}
+
+/* ── Category bar chart slide ── */
+.barsRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 180px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 28px;
+}
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  height: 100%;
+}
+.barFill {
+  width: 100%;
+  border-radius: 8px 8px 4px 4px;
+}
+.barEmoji { font-size: 16px; }
+.barLabel {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+/* ── Bottom controls ── */
+.arrowRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + 20px);
+  z-index: 10;
+}
+.arrowBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.arrowBtn:hover { background: rgba(255, 255, 255, 0.25); }
+.arrowBtn:disabled { opacity: 0.3; cursor: default; }
+
+.shareBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #3d2a1f;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 20px;
+  font-family: var(--font-headline);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+@media (min-width: 480px) {
+  .headline { font-size: 38px; }
+}

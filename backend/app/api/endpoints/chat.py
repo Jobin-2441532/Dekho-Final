@@ -33,7 +33,7 @@ except Exception as _retriever_err:
     _retriever = None  # type: ignore
     _RETRIEVER_AVAILABLE = False
     logging.getLogger("dekho.chat").warning(f"FAISS retriever unavailable: {_retriever_err}")
-from app.services.gemini_service import generate_chat_response
+from app.services.llm_service import generate_chat_response
 from app.core.database import get_db
 from app.models import User, Transaction, SavingsGoal, ChatSession
 from app.services.chat_context import build_chat_context

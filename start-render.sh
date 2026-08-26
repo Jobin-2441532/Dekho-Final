@@ -6,6 +6,9 @@ echo "==> Starting Main Backend on port ${PORT:-10000}..."
 cd backend
 export PYTHONPATH=$(pwd)
 
+echo "==> Running database migrations..."
+alembic upgrade head
+
 # Start ML sidecar in background AFTER switching to backend dir
 (
   cd ../ml_service

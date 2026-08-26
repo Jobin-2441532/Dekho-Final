@@ -1,11 +1,11 @@
 import { lazy, Suspense, useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import AppShell from './components/layout/AppShell'
 import DisclaimerModal from './components/ui/DisclaimerModal'
 import GlobalLoader from './components/ui/GlobalLoader'
 import { Toaster } from 'react-hot-toast'
-/* ── Auth (always needed immediately) ── */
 import Login from './pages/Login'
+import BiometricLockScreen from './components/ui/BiometricLockScreen'
 
 /* ── Main tab pages ── */
 import Home from './pages/Home'
@@ -29,12 +29,16 @@ const LiabilitiesDetail = lazy(() => import('./pages/LiabilitiesDetail'))
 /* ── Grow sub-pages ── */
 const PersonalizedRecommendations = lazy(() => import('./pages/PersonalizedRecommendations'))
 const PathDetailIndexFundSIP      = lazy(() => import('./pages/PathDetailIndexFundSIP'))
+const GrowGuide                   = lazy(() => import('./pages/GrowGuide'))
+const GrowRiskCheck               = lazy(() => import('./pages/GrowRiskCheck'))
+const GrowMarket                  = lazy(() => import('./pages/GrowMarket'))
 
 /* ── Special screens ── */
 const Goals       = lazy(() => import('./pages/Goals'))
 const MonthlyWrap = lazy(() => import('./pages/MonthlyWrap'))
 const Settings    = lazy(() => import('./pages/Settings'))
 const AskDekho    = lazy(() => import('./pages/AskDekho'))
+const FeedbackSupport = lazy(() => import('./pages/FeedbackSupport'))
 
 
 
@@ -43,6 +47,74 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('dekho_token')
   const onboarded = localStorage.getItem('dekho_onboarded')
   return (token && onboarded) ? <>{children}</> : <Navigate to="/login" replace />
+}
+
+/* ── Cold-start guard — always lands on Home on a genuine fresh app launch ──
+   Many installed PWAs resume at whatever URL was last showing instead of the
+   manifest start_url if the OS didn't fully kill the process. sessionStorage
+   only persists for the life of this JS process, so it lets us tell a true
+   cold start apart from in-session navigation (which must NOT be redirected). */
+function ColdStartHome({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    const sessionActive = sessionStorage.getItem('dekho_session_active')
+    if (!sessionActive) {
+      sessionStorage.setItem('dekho_session_active', '1')
+      if (location.pathname !== '/home') {
+        navigate('/home', { replace: true })
+      }
+    }
+    // Deliberately runs once on true mount only — must not depend on location.pathname.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return <>{children}</>
+}
+
+/* ── Biometric Gate — checks for fingerprint lock ── */
+function BiometricGate({ children }: { children: React.ReactNode }) {
+  const [locked, setLocked] = useState(false)
+  const location = useLocation()
+  
+  useEffect(() => {
+    // Only lock if they have biometrics registered
+    const isRegistered = localStorage.getItem('dekho_biometric_id') !== null
+    if (isRegistered && location.pathname !== '/login') {
+      setLocked(true)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const stillRegistered = localStorage.getItem('dekho_biometric_id') !== null
+        if (stillRegistered && location.pathname !== '/login') {
+          setLocked(true)
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    // Intentionally run once on mount only — this must NOT depend on location.pathname,
+    // otherwise every in-app navigation re-locks the app (BiometricGate wraps the whole tree).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (locked) {
+    return (
+      <BiometricLockScreen 
+        onUnlock={() => setLocked(false)} 
+        onFallback={() => {
+          setLocked(false)
+          localStorage.removeItem('dekho_token') // force login
+          window.location.href = '/login'
+        }} 
+      />
+    )
+  }
+
+  return <>{children}</>
 }
 
 /* ── Disclaimer wrapper — shows splash once per session ── */
@@ -86,6 +158,8 @@ export default function App() {
           path="/*"
           element={
             <RequireAuth>
+              <ColdStartHome>
+              <BiometricGate>
               <DisclaimerWrapper>
               <AppShell>
                 <Suspense fallback={<GlobalLoader />}>
@@ -120,10 +194,14 @@ export default function App() {
                     {/* ── Grow sub-pages ── */}
                     <Route path="/grow/recommendations" element={<PersonalizedRecommendations />} />
                     <Route path="/grow/index-fund-sip"  element={<PathDetailIndexFundSIP />} />
+                    <Route path="/grow/guide"           element={<GrowGuide />} />
+                    <Route path="/grow/risk-check"       element={<GrowRiskCheck />} />
+                    <Route path="/grow/market"           element={<GrowMarket />} />
 
                     {/* ── Special ── */}
                     <Route path="/monthly-wrap" element={<MonthlyWrap />} />
                     <Route path="/settings"     element={<Settings />} />
+                    <Route path="/feedback"     element={<FeedbackSupport />} />
                     <Route path="/ask"          element={<AskDekho />} />
                     <Route path="/loader-preview" element={<GlobalLoader />} />
 
@@ -133,6 +211,8 @@ export default function App() {
                 </Suspense>
                 </AppShell>
               </DisclaimerWrapper>
+              </BiometricGate>
+              </ColdStartHome>
             </RequireAuth>
           }
         />

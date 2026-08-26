@@ -15,17 +15,44 @@ export default function Goals() {
   const [showForm, setShowForm] = useState(false)
   const [goalName, setGoalName] = useState('')
   const [goalTarget, setGoalTarget] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const [goals, setGoals] = useState<SavingsGoal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    api.get<SavingsGoal[]>('/api/goals')
+  const loadGoals = () => {
+    setLoading(true)
+    return api.get<SavingsGoal[]>('/api/v1/dashboard/goals')
       .then(setGoals)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadGoals()
   }, [])
+
+  const handleSaveGoal = async () => {
+    if (!goalName.trim() || !goalTarget) return
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await api.post('/api/v1/dashboard/goals', {
+        name: goalName.trim(),
+        target_amount: parseFloat(goalTarget),
+      })
+      setShowForm(false)
+      setGoalName('')
+      setGoalTarget('')
+      await loadGoals()
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : 'Could not save this goal')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const totalSaved = goals.reduce((s, g) => s + g.currentAmount, 0)
   const totalTarget = goals.reduce((s, g) => s + g.targetAmount, 0)
@@ -82,8 +109,15 @@ export default function Goals() {
                 onChange={e => setGoalTarget(e.target.value)}
               />
               <FloatingInput label="Deadline (optional)" type="month" />
-              <Button fullWidth onClick={() => { setShowForm(false); setGoalName(''); setGoalTarget('') }}>
-                Save goal
+              {saveError && (
+                <p style={{ color: 'var(--color-negative)', fontSize: 'var(--text-xs)' }}>{saveError}</p>
+              )}
+              <Button
+                fullWidth
+                onClick={handleSaveGoal}
+                disabled={saving || !goalName.trim() || !goalTarget}
+              >
+                {saving ? 'Saving…' : 'Save goal'}
               </Button>
             </div>
           </Card>

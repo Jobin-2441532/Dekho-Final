@@ -1,32 +1,40 @@
-/* ── Path Detail: Index Fund SIP — Stitch match ── */
+/* ── Path Detail: Index Fund SIP — generic category explainer.
+   No named scheme/AMC, no fabricated historical returns presented as fact,
+   no brokerage redirect claim — see plan for the regulatory reasoning. */
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle2, Info } from 'lucide-react'
+import { api } from '../lib/api'
 import styles from './SubPage.module.css'
 
-const RETURNS_DATA = [
-  { year: '1Y', returns: 12.4 },
-  { year: '3Y', returns: 15.2 },
-  { year: '5Y', returns: 14.8 },
-  { year: '10Y', returns: 13.6 },
-]
-
 const CHECKLIST = [
-  'Invests in all 50 top Indian companies',
-  'Very low expense ratio (~0.1%)',
-  'Fully passive — no fund manager bias',
-  'SIP from ₹1,000/month',
-  'Highly liquid — redeem anytime',
+  'Tracks a broad market index (e.g. Nifty 50, Sensex) rather than picking individual stocks',
+  'Typically lower expense ratios than actively managed funds, since there\'s no active stock-picking',
+  'Passive by design — performance follows the index, for better or worse',
+  'Many funds allow SIPs starting from a few hundred to a few thousand rupees',
+  'Generally liquid — most can be redeemed on any business day, subject to the fund\'s exit load rules',
 ]
 
-const PROJECTIONS = [
-  { duration: '5 years', monthly: 5000, projected: 415000 },
-  { duration: '10 years', monthly: 5000, projected: 1162000 },
-  { duration: '15 years', monthly: 5000, projected: 2508000 },
-]
+const ILLUSTRATION_RATE = 0.10 // assumed, for illustration only — not a promised or historical return
+const DURATIONS = [5, 10, 15]
+
+function projectedValue(monthly: number, years: number, annualRate: number): number {
+  const r = annualRate / 12
+  const n = years * 12
+  if (r === 0) return Math.round(monthly * n)
+  return Math.round(monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r))
+}
 
 export default function PathDetailIndexFundSIP() {
   const navigate = useNavigate()
+  const [monthly, setMonthly] = useState(5000)
   const fmt = (n: number) => '₹' + n.toLocaleString('en-IN')
+
+  useEffect(() => {
+    api.get<{ suggestedMonthlyAmount: number }>('/api/v1/grow/profile')
+      .then(p => { if (p.suggestedMonthlyAmount > 0) setMonthly(p.suggestedMonthlyAmount) })
+      .catch(() => { /* keep the ₹5,000 default illustration */ })
+  }, [])
 
   return (
     <div className={styles.page}>
@@ -41,33 +49,20 @@ export default function PathDetailIndexFundSIP() {
       {/* Hero */}
       <div className={styles.px}>
         <div className={styles.heroCard}>
-          <p className={styles.heroLabel}>GROWTH PATH</p>
+          <p className={styles.heroLabel}>EDUCATIONAL CATEGORY</p>
           <h1 style={{ fontFamily: 'var(--font-headline)', fontSize: 'var(--text-2xl)', fontWeight: 'var(--font-bold)', color: '#fff', lineHeight: 1.2 }}>
-            Nifty 50 Index Fund SIP
+            Index Fund SIP, explained
           </h1>
           <div className={styles.heroMeta}>
-            <span className={styles.heroBadge}>LOW RISK</span>
-            <span className={styles.heroSub}>~13-15% p.a. historically</span>
+            <span className={styles.heroBadge}>MARKET-LINKED</span>
+            <span className={styles.heroSub}>Returns are not fixed and can be negative in any given year</span>
           </div>
         </div>
       </div>
 
-      {/* Returns */}
+      {/* Why this category */}
       <div className={styles.px}>
-        <p className={styles.sectionTitle}>Historical Returns</p>
-        <div className={styles.returnsGrid}>
-          {RETURNS_DATA.map(r => (
-            <div key={r.year} className={styles.returnCell}>
-              <p className={styles.returnPct}>+{r.returns}%</p>
-              <p className={styles.returnPeriod}>{r.year} CAGR</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Why this fund */}
-      <div className={styles.px}>
-        <p className={styles.sectionTitle}>Why this path?</p>
+        <p className={styles.sectionTitle}>What defines this category</p>
         <div className={styles.list}>
           {CHECKLIST.map((item) => (
             <div key={item} className={styles.checkRow}>
@@ -78,20 +73,23 @@ export default function PathDetailIndexFundSIP() {
         </div>
       </div>
 
-      {/* Projections */}
+      {/* Illustration, not a promise */}
       <div className={styles.px}>
-        <p className={styles.sectionTitle}>If you invest {fmt(5000)}/mo</p>
+        <p className={styles.sectionTitle}>Illustrative example — {fmt(monthly)}/mo</p>
         <div className={styles.list}>
-          {PROJECTIONS.map(p => (
-            <div key={p.duration} className={styles.holdingRow}>
+          {DURATIONS.map(years => (
+            <div key={years} className={styles.holdingRow}>
               <div>
-                <p className={styles.holdingName}>After {p.duration}</p>
-                <p className={styles.holdingType}>at ~14% CAGR</p>
+                <p className={styles.holdingName}>After {years} years</p>
+                <p className={styles.holdingType}>assuming a hypothetical {Math.round(ILLUSTRATION_RATE * 100)}% p.a.</p>
               </div>
-              <p className={styles.holdingAmt}>{fmt(p.projected)}</p>
+              <p className={styles.holdingAmt}>{fmt(projectedValue(monthly, years, ILLUSTRATION_RATE))}</p>
             </div>
           ))}
         </div>
+        <p className={styles.checkText} style={{ marginTop: 'var(--space-3)', fontSize: 'var(--text-xs)' }}>
+          This is a hypothetical compounding example to illustrate how regular investing works over time — not a projection, forecast, or promise. Actual returns depend entirely on market performance and could be lower, or negative.
+        </p>
       </div>
 
       {/* Disclaimer */}
@@ -99,17 +97,16 @@ export default function PathDetailIndexFundSIP() {
         <div className={styles.alertCard}>
           <Info size={14} strokeWidth={1.75} style={{ color: 'var(--color-muted)', flexShrink: 0 }} />
           <p className={styles.alertText} style={{ fontSize: 'var(--text-xs)' }}>
-            Past returns are not indicative of future results. Mutual fund investments are subject to market risk.
+            Dekho is not a SEBI-registered investment adviser. This page describes a category of mutual fund for educational purposes, not a specific scheme, and is not a recommendation to invest. Mutual fund investments are subject to market risk — please read scheme documents carefully, or consult a registered adviser, before investing.
           </p>
         </div>
       </div>
 
       {/* CTA */}
       <div className={styles.px}>
-        <button className={styles.ctaBtn} onClick={() => alert('Redirecting to Groww… (coming soon)')}>
-          Start SIP via Groww →
+        <button className={styles.ctaBtn} onClick={() => navigate('/grow/guide')}>
+          Read more before deciding
         </button>
-        <p className={styles.poweredBy}>POWERED BY GROWW BROKERAGE SERVICES</p>
       </div>
     </div>
   )

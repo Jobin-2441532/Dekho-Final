@@ -8,14 +8,17 @@ from dotenv import load_dotenv
 from app.core.config import settings
 from app.core.logging_config import logger
 from app.core.rate_limit import limiter
-from app.api.endpoints import chat, dashboard, ingestion, features, auth, jobs, feedback, insights, ml_proxy, csv_import, home, expenses
+from app.api.endpoints import chat, dashboard, ingestion, features, auth, jobs, feedback, insights, ml_proxy, csv_import, home, expenses, wrap, notifications, support, grow, wealth
 from app.services.retriever import retriever
 from app.core.database import get_db
 from app.services.storage import storage_service
 from sqlalchemy.orm import Session
 from contextlib import asynccontextmanager
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv()
+
+scheduler = BackgroundScheduler()
 
 # ---------------------------------------------------------------------------
 # Lifespan — startup / shutdown hooks
@@ -32,7 +35,14 @@ async def lifespan(app: FastAPI):
     #     retriever.load()
     # logger.info("FAISS Initialized!")
     logger.info(f"MinIO available: {storage_service.is_available()}")
+
+    from app.services.notification_jobs import run_daily_notifications
+    scheduler.add_job(run_daily_notifications, "cron", hour=20, id="daily_notifications", replace_existing=True)
+    scheduler.start()
+    logger.info("Notification scheduler started (daily nudge job at 20:00 server time).")
+
     yield
+    scheduler.shutdown(wait=False)
     logger.info("Dekho API shutting down.")
 
 
@@ -162,3 +172,8 @@ app.include_router(ml_proxy.router,   prefix="/api/v1/ml",     tags=["ml"])
 app.include_router(csv_import.router, prefix="/api/v1/import", tags=["import"])
 app.include_router(home.router, prefix="/api/home", tags=["home"])
 app.include_router(expenses.router, prefix="/api/v1/expenses", tags=["expenses"])
+app.include_router(wrap.router, prefix="/api/v1/wrap", tags=["wrap"])
+app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(support.router, prefix="/api/v1/support", tags=["support"])
+app.include_router(grow.router, prefix="/api/v1/grow", tags=["grow"])
+app.include_router(wealth.router, prefix="/api/v1/wealth", tags=["wealth"])

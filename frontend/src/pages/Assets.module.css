@@ -40,7 +40,7 @@
 
 /* Hero card */
 .heroCard {
-  background: var(--color-primary);
+  background: var(--color-brand-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   display: flex;
@@ -100,6 +100,62 @@
 }
 
 .heroCTA:hover { background: rgba(255,255,255,0.22); }
+
+/* Attention strip */
+.attnStrip {
+  display: flex; gap: var(--space-3); align-items: flex-start;
+  background: var(--color-warning-bg, rgba(180,83,9,0.1));
+  color: var(--color-warning, #b45309);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  font-weight: 500;
+}
+.attnStrip svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Category cards (Savings / Investments / Liabilities) */
+.catGrid { display: flex; flex-direction: column; gap: var(--space-3); }
+.catCard { border-radius: var(--radius-lg); padding: var(--space-4) var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); cursor: pointer; border: none; text-align: left; width: 100%; }
+.catTop { display: flex; align-items: center; justify-content: space-between; }
+.catNameWrap { display: flex; align-items: center; gap: var(--space-3); }
+.catIcon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: var(--text-base); flex-shrink: 0; }
+.catName { font-family: var(--font-headline); font-weight: var(--font-bold); font-size: var(--text-sm); }
+.catSub { font-family: var(--font-body); font-size: var(--text-xs); margin-top: 2px; }
+.catAmt { font-family: var(--font-headline); font-weight: var(--font-bold); font-size: var(--text-lg); font-variant-numeric: tabular-nums; }
+.catFoot { display: flex; align-items: center; justify-content: space-between; }
+.catChip { font-family: var(--font-body); font-size: var(--text-xs); font-weight: var(--font-bold); padding: 3px var(--space-3); border-radius: var(--radius-full); }
+
+.catCard.savings { background: var(--color-savings-bg); }
+.catCard.savings .catIcon { background: color-mix(in srgb, var(--color-savings) 18%, transparent); }
+.catCard.savings .catName, .catCard.savings .catAmt { color: var(--color-savings); }
+.catCard.savings .catSub { color: var(--color-on-surface-var); }
+.catProgressTrack { height: 5px; border-radius: var(--radius-full); background: color-mix(in srgb, var(--color-savings) 18%, transparent); overflow: hidden; }
+.catProgressFill { height: 100%; background: var(--color-savings); border-radius: var(--radius-full); }
+
+.catCard.investments { background: var(--color-brand-surface); color: #fff; }
+.catCard.investments .catIcon { background: rgba(255,255,255,0.14); }
+.catCard.investments .catSub { color: rgba(255,255,255,0.6); }
+.catCard.investments .catChip { background: rgba(127,216,138,0.22); color: #a8e8ae; }
+
+.catCard.liabilities { background: var(--color-liability-bg); }
+.catCard.liabilities .catIcon { background: color-mix(in srgb, var(--color-liability) 18%, transparent); }
+.catCard.liabilities .catName, .catCard.liabilities .catAmt { color: var(--color-liability); }
+.catCard.liabilities .catSub { color: var(--color-on-surface-var); }
+.catCard.liabilities .catChip { background: color-mix(in srgb, var(--color-liability) 18%, transparent); color: var(--color-liability); }
+
+/* Recent movement list */
+.moveList { display: flex; flex-direction: column; gap: 2px; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.moveRow { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-outline-var); }
+.moveRow:last-child { border-bottom: none; }
+.moveIcon { width: 32px; height: 32px; border-radius: var(--radius-md); background: var(--bg-surface-high); display: flex; align-items: center; justify-content: center; font-size: var(--text-sm); flex-shrink: 0; }
+.moveBody { flex: 1; min-width: 0; }
+.moveTitle { font-family: var(--font-body); font-size: var(--text-xs); font-weight: var(--font-semibold); color: var(--color-on-surface); }
+.moveSub { font-family: var(--font-body); font-size: 11px; color: var(--color-muted); }
+.moveAmt { font-family: var(--font-body); font-size: var(--text-xs); font-weight: var(--font-bold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.moveAmt.pos { color: var(--color-positive); }
+.moveAmt.neg { color: var(--color-negative); }
 
 /* Chart card */
 .chartCard {
@@ -314,7 +370,7 @@
 
 /* Insight card */
 .insightCard {
-  background: var(--color-primary);
+  background: var(--color-brand-surface);
   border-radius: var(--radius-xl);
   padding: var(--space-5) var(--space-6);
   display: flex;

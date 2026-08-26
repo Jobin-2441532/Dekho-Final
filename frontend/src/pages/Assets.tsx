@@ -1,19 +1,32 @@
-/* ── Assets Page — Stitch "Assets Overview - Updated Nav" ── */
+/* ── Wealth page (formerly "Assets") — real net worth, category
+   breakdown, and monthly signals, computed server-side from the
+   user's actual Asset and Transaction rows. ── */
 
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Settings } from 'lucide-react'
-import { SkeletonCard } from '../components/ui/LoadingState'
+import { ChevronRight, Settings, AlertTriangle } from 'lucide-react'
+import { SkeletonCard, ErrorState } from '../components/ui/LoadingState'
 import { api } from '../lib/api'
 import styles from './Assets.module.css'
 
-const API = import.meta.env.VITE_API_URL ?? `http://${window.location.hostname}:8000`
+interface WealthProfile {
+  netWorth: number
+  savings: { total: number; monthsCovered: number }
+  investments: { total: number; contributionThisMonth: number }
+  liabilities: { obligationsThisMonth: number }
+  cashflowDelta: number
+  narrative: string
+  attention: string | null
+  trend: { label: string; value: number }[]
+  movement: { merchant: string; category: string; date: string; amount: number; isPositive: boolean }[]
+  hasAssets: boolean
+}
 
 /* Mini sparkline using SVG */
 function Sparkline({ data, color = '#6C482D' }: { data: number[]; color?: string }) {
   if (data.length < 2) return null
-  const min = Math.min(...data)
-  const max = Math.max(...data)
+  const min = Math.min(...data, 0)
+  const max = Math.max(...data, 0)
   const range = max - min || 1
   const w = 200, h = 60
   const pts = data.map((v, i) => {
@@ -24,48 +37,21 @@ function Sparkline({ data, color = '#6C482D' }: { data: number[]; color?: string
 
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className={styles.sparkline} aria-hidden="true">
-      <polyline
-        points={pts}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
 export default function Assets() {
   const navigate = useNavigate()
-  const [profile, setProfile] = useState<any>(null)
+  const [data, setData] = useState<WealthProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'1W' | '1M' | '3M' | '1Y'>('1M')
-
-  // Static data matching Stitch prototype values
-  const netWorth = 342500
-  const savings = 120000
-  const investments = 205000
-  const liabilities = 17500
-  const monthGrowth = 12400
-
-  const sparkData: Record<string, number[]> = {
-    '1W': [335000, 337200, 336800, 338000, 340000, 341500, 342500],
-    '1M': [320000, 324000, 322500, 328000, 331000, 338000, 342500],
-    '3M': [295000, 305000, 310000, 315000, 325000, 335000, 342500],
-    '1Y': [240000, 260000, 270000, 285000, 300000, 320000, 342500],
-  }
-
-  const growthBreakdown = [
-    { label: 'Contributions', amount: 8000, bar: 65 },
-    { label: 'Market growth', amount: 3200, bar: 26 },
-    { label: 'Interest', amount: 1200, bar: 10 },
-  ]
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    api.get('/api/v1/dashboard/profile')
-      .then((res: any) => setProfile(res))
-      .catch((err: any) => console.error("Failed to load profile", err))
+    api.get<WealthProfile>('/api/v1/wealth/profile')
+      .then(setData)
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
@@ -77,13 +63,21 @@ export default function Assets() {
     </div>
   )
 
-  const fmt = (n: number) => '₹' + n.toLocaleString('en-IN')
+  if (error || !data) return (
+    <div style={{ padding: 'var(--space-5)' }}>
+      <ErrorState message={error ?? undefined} />
+    </div>
+  )
+
+  const fmt = (n: number) => '₹' + Math.round(n).toLocaleString('en-IN')
+  const savingsGoalMonths = 3
+  const savingsPct = Math.min(100, Math.round((data.savings.monthsCovered / savingsGoalMonths) * 100))
 
   return (
     <div className={styles.page}>
       {/* ── Top Bar ── */}
       <div className={styles.topBar}>
-        <p style={{ fontFamily: 'var(--font-headline)', fontSize: '24px', fontWeight: 'bold', color: 'var(--color-on-surface)', margin: 0 }}>Assets</p>
+        <p style={{ fontFamily: 'var(--font-headline)', fontSize: '24px', fontWeight: 'bold', color: 'var(--color-on-surface)', margin: 0 }}>Wealth</p>
         <button className={styles.iconBtn} onClick={() => navigate('/settings')} aria-label="Settings">
           <Settings size={18} strokeWidth={1.75} />
         </button>
@@ -92,133 +86,133 @@ export default function Assets() {
       {/* ── Net Worth Hero ── */}
       <div className={styles.px}>
         <div className={styles.heroCard}>
-          <p className={styles.heroLabel}>YOUR NET WORTH</p>
-          <h1 className={styles.heroAmount}>{fmt(netWorth)}</h1>
+          <p className={styles.heroLabel}>NET WORTH</p>
+          <h1 className={styles.heroAmount}>{fmt(data.netWorth)}</h1>
           <div className={styles.heroChange}>
-            <span className={styles.heroPct}>+{fmt(monthGrowth)}</span>
-            <span className={styles.heroChangeSub}>this month</span>
+            <span className={styles.heroPct}>{data.cashflowDelta >= 0 ? '↗' : '↘'} {fmt(Math.abs(data.cashflowDelta))}</span>
+            <span className={styles.heroChangeSub}>this month's cashflow</span>
           </div>
-          <button className={styles.heroCTA}>Tap to see details →</button>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, margin: 0 }}>
+            {data.narrative}
+          </p>
         </div>
       </div>
 
-      {/* ── Performance Chart ── */}
+      {/* ── Attention strip — only shown when there's a real signal ── */}
+      {data.attention && (
+        <div className={styles.px}>
+          <div className={styles.attnStrip}>
+            <AlertTriangle size={15} />
+            <span>{data.attention}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Category Cards ── */}
+      <div className={styles.px}>
+        <div className={styles.catGrid}>
+          <button className={`${styles.catCard} ${styles.savings}`} onClick={() => navigate('/assets/savings')}>
+            <div className={styles.catTop}>
+              <div className={styles.catNameWrap}>
+                <div className={styles.catIcon}>🐷</div>
+                <div>
+                  <p className={styles.catName}>Savings</p>
+                  <p className={styles.catSub}>
+                    {data.savings.monthsCovered > 0
+                      ? `${data.savings.monthsCovered} months of expenses covered`
+                      : 'Safe & accessible'}
+                  </p>
+                </div>
+              </div>
+              <p className={styles.catAmt}>{fmt(data.savings.total)}</p>
+            </div>
+            <div className={styles.catProgressTrack}>
+              <div className={styles.catProgressFill} style={{ width: `${savingsPct}%` }} />
+            </div>
+          </button>
+
+          <button className={`${styles.catCard} ${styles.investments}`} onClick={() => navigate('/assets/investments')}>
+            <div className={styles.catTop}>
+              <div className={styles.catNameWrap}>
+                <div className={styles.catIcon}>🌱</div>
+                <div>
+                  <p className={styles.catName}>Investments</p>
+                  <p className={styles.catSub}>SIP + mutual funds</p>
+                </div>
+              </div>
+              <p className={styles.catAmt}>{fmt(data.investments.total)}</p>
+            </div>
+            <div className={styles.catFoot}>
+              <span className={styles.catSub}>
+                {data.investments.contributionThisMonth > 0 ? 'Added this month' : 'No contribution logged this month'}
+              </span>
+              {data.investments.contributionThisMonth > 0 && (
+                <span className={styles.catChip}>+{fmt(data.investments.contributionThisMonth)}</span>
+              )}
+            </div>
+          </button>
+
+          <button className={`${styles.catCard} ${styles.liabilities}`} onClick={() => navigate('/assets/liabilities')}>
+            <div className={styles.catTop}>
+              <div className={styles.catNameWrap}>
+                <div className={styles.catIcon}>💳</div>
+                <div>
+                  <p className={styles.catName}>Liabilities</p>
+                  <p className={styles.catSub}>Credit card + EMI, this month</p>
+                </div>
+              </div>
+              <p className={styles.catAmt}>{fmt(data.liabilities.obligationsThisMonth)}</p>
+            </div>
+            <div className={styles.catFoot}>
+              <span className={styles.catSub}>
+                {data.liabilities.obligationsThisMonth > 0 ? 'Paid this month' : 'Nothing logged this month'}
+              </span>
+              <ChevronRight size={16} className={styles.chevron} />
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Cashflow trend (real, last 6 months) ── */}
       <div className={styles.px}>
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
-            <p className={styles.chartTitle}>Performance</p>
-            <div className={styles.tabRow} role="group" aria-label="Time period">
-              {(['1W', '1M', '3M', '1Y'] as const).map(t => (
-                <button
-                  key={t}
-                  className={`${styles.tab} ${activeTab === t ? styles.tabActive : ''}`}
-                  onClick={() => setActiveTab(t)}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+            <p className={styles.chartTitle}>Cashflow trend</p>
           </div>
           <div className={styles.chartArea}>
-            <Sparkline data={sparkData[activeTab]} color="var(--color-primary)" />
+            <Sparkline data={data.trend.map(t => t.value)} color="var(--color-primary)" />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            {data.trend.map(t => (
+              <span key={t.label} style={{ fontFamily: 'var(--font-body)', fontSize: '10px', color: 'var(--color-muted)' }}>{t.label}</span>
+            ))}
           </div>
           <p className={styles.chartInsight}>
-            💡 Most growth came from your investments this month
+            💡 Income minus expenses, month by month — a proxy for how your net worth is trending.
           </p>
         </div>
       </div>
 
-      {/* ── Asset Category Cards ── */}
-      <div className={styles.px}>
-        <div className={styles.assetList}>
-          <button
-            className={styles.assetCard}
-            onClick={() => navigate('/assets/savings')}
-          >
-            <div className={styles.assetLeft}>
-              <div className={styles.assetDot} data-type="savings" />
-              <div>
-                <p className={styles.assetName}>Savings</p>
-                <p className={styles.assetDesc}>Safe &amp; accessible</p>
+      {/* ── Recent movement ── */}
+      {data.movement.length > 0 && (
+        <div className={styles.px}>
+          <p className={styles.breakdownTitle} style={{ marginBottom: 'var(--space-3)' }}>Recent movement</p>
+          <div className={styles.moveList}>
+            {data.movement.map((m, i) => (
+              <div key={i} className={styles.moveRow}>
+                <div className={styles.moveIcon}>{m.isPositive ? '🌱' : '💳'}</div>
+                <div className={styles.moveBody}>
+                  <p className={styles.moveTitle}>{m.merchant}</p>
+                  <p className={styles.moveSub}>{m.category} · {m.date}</p>
+                </div>
+                <span className={`${styles.moveAmt} ${m.isPositive ? styles.pos : styles.neg}`}>
+                  {m.isPositive ? '+' : ''}{fmt(m.amount)}
+                </span>
               </div>
-            </div>
-            <div className={styles.assetRight}>
-              <p className={styles.assetAmt}>{fmt(savings)}</p>
-              <ChevronRight size={16} className={styles.chevron} />
-            </div>
-          </button>
-
-          <div className={styles.assetDivider} />
-
-          <button
-            className={styles.assetCard}
-            onClick={() => navigate('/assets/investments')}
-          >
-            <div className={styles.assetLeft}>
-              <div className={styles.assetDot} data-type="investments" />
-              <div>
-                <p className={styles.assetName}>Investments</p>
-                <p className={styles.assetDesc}>Growing your money</p>
-              </div>
-            </div>
-            <div className={styles.assetRight}>
-              <p className={`${styles.assetAmt} ${styles.assetAmtGreen}`}>{fmt(investments)}</p>
-              <ChevronRight size={16} className={styles.chevron} />
-            </div>
-          </button>
-
-          <div className={styles.assetDivider} />
-
-          <button
-            className={styles.assetCard}
-            onClick={() => navigate('/assets/liabilities')}
-          >
-            <div className={styles.assetLeft}>
-              <div className={styles.assetDot} data-type="liabilities" />
-              <div>
-                <p className={styles.assetName}>Liabilities</p>
-                <p className={styles.assetDesc}>Money you owe</p>
-              </div>
-            </div>
-            <div className={styles.assetRight}>
-              <p className={`${styles.assetAmt} ${styles.assetAmtRed}`}>{fmt(liabilities)}</p>
-              <ChevronRight size={16} className={styles.chevron} />
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Growth Breakdown ── */}
-      <div className={styles.px}>
-        <div className={styles.breakdownCard}>
-          <div className={styles.breakdownHeader}>
-            <p className={styles.breakdownTitle}>Growth breakdown</p>
-            <p className={styles.breakdownSub}>{fmt(monthGrowth)} earned this month</p>
+            ))}
           </div>
-          {growthBreakdown.map(item => (
-            <div key={item.label} className={styles.breakdownRow}>
-              <div className={styles.breakdownMeta}>
-                <p className={styles.breakdownLabel}>• {item.label}</p>
-                <p className={styles.breakdownAmt}>{fmt(item.amount)}</p>
-              </div>
-              <div className={styles.breakdownTrack}>
-                <div className={styles.breakdownFill} style={{ width: `${item.bar}%` }} />
-              </div>
-            </div>
-          ))}
         </div>
-      </div>
-
-      {/* ── Insight Card ── */}
-      <div className={styles.px}>
-        <div className={styles.insightCard}>
-          <p className={styles.insightLabel}>TODAY'S INSIGHT</p>
-          <p className={styles.insightText}>
-            Your investments are performing well. 60% of your growth came from market gains this period.
-          </p>
-          <button className={styles.insightCTA}>Read full report</button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

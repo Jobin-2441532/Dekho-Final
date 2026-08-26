@@ -23,6 +23,13 @@
   --color-on-primary:      #FFFFFF;
   --color-primary-gradient: linear-gradient(135deg, #493021 0%, #5e3c28 100%);
 
+  /* Theme-STABLE brand surface — for large hero/info card fills that should
+     always read as "brand dark brown" regardless of theme (unlike
+     --color-primary above, which intentionally inverts for legible
+     buttons/CTAs). Deliberately not redefined under [data-theme="dark"]. */
+  --color-brand-surface:    #493021;
+  --color-on-brand-surface: #FFFFFF;
+
   /* ── Secondary ── */
   --color-secondary:       #805533;
   --color-secondary-container: #FDC39A;
@@ -46,6 +53,12 @@
   --color-warning-bg:      #FFF8EB;
   --color-negative:        #BA1A1A;
   --color-negative-bg:     #FFDAD6;
+
+  /* Category accents (Wealth page: Savings / Liabilities) */
+  --color-savings:         #2f6f6b;
+  --color-savings-bg:      #e7f2f1;
+  --color-liability:       #a13d2c;
+  --color-liability-bg:    #fbe9e4;
 
   /* ── Outline / Border ── */
   --color-outline:         #83746B;
@@ -110,6 +123,12 @@
   --color-warning-bg:      rgba(255, 183, 77, 0.12);
   --color-negative:        #e57373;
   --color-negative-bg:     rgba(229, 115, 115, 0.12);
+
+  /* Category accents (Wealth page: Savings / Liabilities) */
+  --color-savings:         #6fb8b2;
+  --color-savings-bg:      #1c2b2a;
+  --color-liability:       #d98c78;
+  --color-liability-bg:    #2c1e1a;
 
   /* ── Outline / Border ── */
   --color-outline:         #5c554e;

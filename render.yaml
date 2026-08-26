@@ -9,8 +9,18 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false # You will paste your Neon DB URL in the Render dashboard
-      - key: GEMINI_API_KEY
-        sync: false # Paste your Gemini Key in the dashboard
+      - key: GROQ_API_KEY
+        sync: false # Paste your Groq API key in the dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false # Paste your OpenRouter API key in the dashboard
+      - key: FRONTEND_ORIGIN
+        sync: false # Your Vercel frontend URL, e.g. https://dekho.vercel.app
+      - key: VAPID_PUBLIC_KEY
+        sync: false # Optional — enables web push notifications
+      - key: VAPID_PRIVATE_KEY
+        sync: false # Optional — enables web push notifications
+      - key: VAPID_CLAIM_EMAIL
+        sync: false # Optional — defaults to admin@dekho.app
       - key: JWT_SECRET_KEY
         generateValue: true # Render will auto-generate a secure random key
       - key: ML_SERVICE_URL

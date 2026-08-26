@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -6,6 +7,7 @@ from app.core.database import get_db
 from app.models import Transaction, SavingsGoal, User, Asset, Recommendation
 from app.api.endpoints.auth import get_current_user
 
+logger = logging.getLogger("dekho.dashboard")
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
@@ -90,6 +92,14 @@ def create_transaction(
     db.add(tx)
     db.commit()
     db.refresh(tx)
+
+    if tx.direction == "debit":
+        try:
+            from app.services.notification_jobs import check_budget_alerts
+            check_budget_alerts(db, current_user)
+        except Exception as e:
+            logger.warning(f"Budget alert check failed: {e}")
+
     return {
         "status": "success",
         "data": {

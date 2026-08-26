@@ -1,9 +1,10 @@
 /* ── Login / Sign-up with mandatory bank statement selection ── */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Lock, CheckCircle2, FileText, ChevronRight } from 'lucide-react'
+import { Lock, CheckCircle2, FileText, ChevronRight, Fingerprint, AlertTriangle } from 'lucide-react'
 import Button from '../components/ui/Button'
 import FloatingInput from '../components/ui/FloatingInput'
+import { useBiometric } from '../hooks/useBiometric'
 import styles from './Onboarding.module.css'
 
 const BASE_URL = import.meta.env.VITE_API_URL || ''
@@ -105,7 +106,7 @@ function StatementCard({
           color: '#d97706',
           fontFamily: 'var(--font-body)',
         }}>
-          📅 Sample data · 1 Apr – 3 May 2026
+          📅 Sample data · {meta.date_range}
         </div>
       </div>
 
@@ -123,8 +124,8 @@ function StatementCard({
 export default function Login() {
   const navigate = useNavigate()
 
-  // Step: 'pick' = choosing statement | 'auth' = credentials form
-  const [step,      setStep]      = useState<'pick' | 'auth'>('auth')
+  // Step: 'pick' = choosing statement | 'auth' = credentials form | 'lock' = mandatory app-lock setup (signup only)
+  const [step,      setStep]      = useState<'pick' | 'auth' | 'lock'>('auth')
   const [isLogin,   setIsLogin]   = useState(true)
   const [name,      setName]      = useState('')
   const [email,     setEmail]     = useState('')
@@ -132,6 +133,8 @@ export default function Login() {
   const [error,     setError]     = useState('')
   const [loading,   setLoading]   = useState(false)
   const [importing, setImporting] = useState(false)
+  const { isSupported: lockSupported, register: registerLock } = useBiometric()
+  const [lockStatus, setLockStatus] = useState<'idle' | 'trying' | 'failed'>('idle')
 
   const [statements, setStatements] = useState<StatementMeta[]>([])
   const [selected,   setSelected]   = useState<string>('')
@@ -154,9 +157,9 @@ export default function Login() {
         console.error('Failed to fetch statements:', e)
         // Fallback static metadata if backend unreachable
         setStatements([
-          { id: 'Statement9',  label: 'Statement 9',  salary: '₹50,000 / month', date_range: 'Apr – May 2026', transactions: 64, profile: 'Mid-income, Bangalore',    icon: '🏙️', color: '#8B6347' },
-          { id: 'Statement10', label: 'Statement 10', salary: '₹52,000 / month', date_range: 'Apr – May 2026', transactions: 64, profile: 'Upper-mid, Hyderabad',    icon: '💼', color: '#6C8B47' },
-          { id: 'Statement11', label: 'Statement 11', salary: '₹47,000 / month', date_range: 'Apr – May 2026', transactions: 64, profile: 'Moderate spend, Chennai', icon: '🌊', color: '#47688B' },
+          { id: 'Statement9',  label: 'Statement 9',  salary: '₹50,000 / month', date_range: 'Recent', transactions: 64, profile: 'Mid-income, Bangalore',    icon: '🏙️', color: '#8B6347' },
+          { id: 'Statement10', label: 'Statement 10', salary: '₹52,000 / month', date_range: 'Recent', transactions: 64, profile: 'Upper-mid, Hyderabad',    icon: '💼', color: '#6C8B47' },
+          { id: 'Statement11', label: 'Statement 11', salary: '₹47,000 / month', date_range: 'Recent', transactions: 64, profile: 'Moderate spend, Chennai', icon: '🌊', color: '#47688B' },
         ])
       })
   }, [])
@@ -197,7 +200,6 @@ export default function Login() {
       }
 
       localStorage.setItem('dekho_token', token)
-      localStorage.setItem('dekho_onboarded', 'true')
 
       // ── ONLY import the selected bank statement on registration ──────────────
       if (!isLogin && selected) {
@@ -218,12 +220,35 @@ export default function Login() {
         }
       }
 
+      if (!isLogin) {
+        // New accounts must set up App Lock before entering the app.
+        setImporting(false)
+        setStep('lock')
+        return
+      }
+
+      localStorage.setItem('dekho_onboarded', 'true')
       navigate('/home')
     } catch (e: any) {
       setError(e.message || 'Something went wrong')
     } finally {
       setLoading(false)
       setImporting(false)
+    }
+  }
+
+  const completeSignUp = () => {
+    localStorage.setItem('dekho_onboarded', 'true')
+    navigate('/home')
+  }
+
+  const handleSetUpLock = async () => {
+    setLockStatus('trying')
+    const success = await registerLock(name || email)
+    if (success) {
+      completeSignUp()
+    } else {
+      setLockStatus('failed')
     }
   }
 
@@ -297,6 +322,63 @@ export default function Login() {
           <div className={styles.privacyNote} style={{ marginTop: 20 }}>
             <Lock size={12} />
             <span>Statement data stays on your device only.</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Step 3: Mandatory App Lock (signup only, cannot be skipped) ────────────
+  if (step === 'lock') {
+    return (
+      <div className={styles.screen}>
+        <div className={styles.inner}>
+          <div className={styles.logo} style={{ marginBottom: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <img src="/logo-nobg.png" alt="Dekho Logo" style={{ width: 120, height: 120, objectFit: 'contain', marginBottom: '-28px' }} />
+            <span className={styles.logoName}>Dekho</span>
+          </div>
+
+          <div className={styles.heading}>
+            <h1>Secure your account</h1>
+            <p>Dekho is a finance app, so an app lock is required — it uses your device's own fingerprint, face, or screen-lock, never a password we store.</p>
+          </div>
+
+          <div className={styles.features}>
+            <div className={styles.featureRow}>
+              <span className={styles.featureEmoji}>🔐</span>
+              <div className={styles.featureText}>
+                <strong>Why this is required</strong>
+                <span>Your financial data stays locked behind your device's own biometrics, even if someone else picks up your phone.</span>
+              </div>
+            </div>
+          </div>
+
+          {lockStatus === 'failed' && (
+            <div className={styles.featureRow} style={{ color: 'var(--color-negative)' }}>
+              <AlertTriangle size={18} />
+              <div className={styles.featureText}>
+                <strong>That didn't work</strong>
+                <span>Please try again — you'll need to complete this to continue.</span>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.navRow}>
+            {lockSupported ? (
+              <Button fullWidth onClick={handleSetUpLock} loading={lockStatus === 'trying'} iconLeft={<Fingerprint size={16} />}>
+                {lockStatus === 'failed' ? 'Try again' : 'Set up App Lock'}
+              </Button>
+            ) : (
+              <>
+                <div className={styles.privacyNote}>
+                  <AlertTriangle size={12} />
+                  <span>Your browser doesn't support device lock. You can set it up later from Settings on a supported device.</span>
+                </div>
+                <Button fullWidth onClick={completeSignUp}>
+                  Continue →
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

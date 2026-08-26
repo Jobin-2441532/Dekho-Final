@@ -1,57 +1,97 @@
 /* Grow page — Stitch "Grow Home" + "Readiness Guardrail" */
 
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, TrendingUp, Leaf, BarChart2, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react'
-import { useAppStore } from '../store/appStore'
+import { AlertTriangle, CheckCircle2, Sparkles, BookOpen, Target, Gauge, LineChart } from 'lucide-react'
+import { api } from '../lib/api'
+import { SkeletonCard, ErrorState } from '../components/ui/LoadingState'
 import styles from './Grow.module.css'
 
-const RECS = [
-  {
-    id: 'sip',
-    emoji: '📈',
-    title: 'Start a ₹5,000/mo SIP',
-    subtitle: 'Nifty 50 Index Fund',
-    risk: 'LOW RISK',
-    riskColor: '#2E7D32',
-    horizon: '7+ years',
-    why: 'Based on your savings buffer and income stability, you can start compounding now.',
-    to: '/grow/recommendations',
-  },
-  {
-    id: 'fd',
-    emoji: '🔒',
-    title: 'Open a 1-Year FD',
-    subtitle: 'HDFC Bank · 7.1% p.a.',
-    risk: 'NO RISK',
-    riskColor: '#1565C0',
-    horizon: '1 year',
-    why: 'Your emergency fund is sufficient — park extra cash in a high-yield FD.',
-    to: '/assets/savings',
-  },
-  {
-    id: 'cc',
-    emoji: '💳',
-    title: 'Clear Credit Card First',
-    subtitle: 'SBI Card · 36% p.a.',
-    risk: 'PRIORITY',
-    riskColor: '#B45309',
-    horizon: 'This month',
-    why: 'Paying 36% interest is worse than any investment return. Clear this first.',
-    to: '/assets/liabilities',
-  },
-]
+interface ChecklistItem {
+  key: string
+  label: string
+  done: boolean
+  detail: string
+}
 
-const READINESS_CHECKLIST = [
-  { label: '3+ months emergency fund', done: false },
-  { label: 'Consistent monthly savings > 20%', done: false },
-  { label: 'No high-interest debt (>12% p.a.)', done: true },
-  { label: 'Monthly income stable for 6 months', done: true },
-  { label: 'Basic insurance coverage', done: false },
-]
+interface GrowProfile {
+  isInvestmentEligible: boolean
+  priority: 'emergency_fund' | 'goal_planning' | 'investment_education'
+  monthlyIncome: number
+  monthlyExpenseEstimate: number
+  emergencyFund: { monthsCovered: number; liquidTotal: number }
+  riskComfort: string | null
+  riskLabel: string
+  checklist: ChecklistItem[]
+  suggestedMonthlyAmount: number
+  disclaimer: string
+}
 
-function GrowHome() {
+/* Educational "next step" ideas — generic categories, not specific securities
+   or named schemes (see plan: Grow shows illustrative options, not advice). */
+function buildNextSteps(profile: GrowProfile) {
+  return [
+    {
+      id: 'sip',
+      emoji: '📈',
+      title: profile.suggestedMonthlyAmount > 0
+        ? `Explore a ₹${profile.suggestedMonthlyAmount.toLocaleString('en-IN')}/mo SIP`
+        : 'Explore SIPs as a category',
+      subtitle: 'Index fund SIP · illustrative example',
+      risk: 'MARKET-LINKED',
+      riskColor: '#2E7D32',
+      horizon: '7+ years',
+      why: `Your risk profile: ${profile.riskLabel}. A SIP is a way of investing periodically — it isn't risk-free, and returns aren't guaranteed.`,
+      to: '/grow/recommendations',
+    },
+    {
+      id: 'fd',
+      emoji: '🔒',
+      title: 'Learn about Fixed Deposits',
+      subtitle: 'Low-risk, fixed-return category',
+      risk: 'LOW RISK',
+      riskColor: '#1565C0',
+      horizon: '1+ years',
+      why: 'A good place to park money you may need soon, once your emergency fund is covered.',
+      to: '/assets/savings',
+    },
+    {
+      id: 'debt',
+      emoji: '💳',
+      title: 'Review high-interest debt first',
+      subtitle: 'Credit cards & short-term loans',
+      risk: 'PRIORITY',
+      riskColor: '#B45309',
+      horizon: 'This month',
+      why: 'Paying off high-interest debt (12%+ p.a.) usually beats any investment return.',
+      to: '/assets/liabilities',
+    },
+  ]
+}
+
+function QuickLinks() {
   const navigate = useNavigate()
-  const suggestedAmount = 5000
+  return (
+    <div className={styles.quickLinks}>
+      <button className={styles.quickLinkBtn} onClick={() => navigate('/grow/guide')}>
+        <BookOpen size={16} strokeWidth={1.75} /> Read Guidelines
+      </button>
+      <button className={styles.quickLinkBtn} onClick={() => navigate('/goals')}>
+        <Target size={16} strokeWidth={1.75} /> Set a Goal
+      </button>
+      <button className={styles.quickLinkBtn} onClick={() => navigate('/grow/risk-check')}>
+        <Gauge size={16} strokeWidth={1.75} /> Risk Check
+      </button>
+      <button className={styles.quickLinkBtn} onClick={() => navigate('/grow/market')}>
+        <LineChart size={16} strokeWidth={1.75} /> Market
+      </button>
+    </div>
+  )
+}
+
+function GrowHome({ profile }: { profile: GrowProfile }) {
+  const navigate = useNavigate()
+  const steps = buildNextSteps(profile)
 
   return (
     <div className={styles.page}>
@@ -61,22 +101,28 @@ function GrowHome() {
         <div className={styles.avatarBtn}>AK</div>
       </div>
 
+      <div className={styles.px}><QuickLinks /></div>
+
       {/* Action center */}
       <div className={styles.px}>
         <div className={styles.actionCenterCard}>
           <p className={styles.actionLabel}>ACTION CENTER</p>
           <h1 className={styles.actionTitle}>Your next growth step</h1>
-        
+
         <div className={styles.readinessBadge}>
           <Sparkles size={18} className={styles.readinessIcon} strokeWidth={2} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className={styles.readinessBadgeLabel}>SMART INSIGHT</span>
-            <span className={styles.readinessBadgeText}>Because your savings buffer is stable, you can safely start growing your wealth.</span>
+            <span className={styles.readinessBadgeLabel}>YOUR STATUS</span>
+            <span className={styles.readinessBadgeText}>
+              {profile.emergencyFund.monthsCovered >= 3
+                ? `Your emergency fund covers ${profile.emergencyFund.monthsCovered} months — you're in a good position to explore investing.`
+                : `Your emergency fund covers ${profile.emergencyFund.monthsCovered} months. Building it toward 3 months is a strong next step.`}
+            </span>
           </div>
         </div>
 
-        <p className={styles.suggestedLabel}>Suggested monthly amount</p>
-        <p className={styles.suggestedAmt}>₹{suggestedAmount.toLocaleString('en-IN')}</p>
+        <p className={styles.suggestedLabel}>Suggested monthly amount to explore</p>
+        <p className={styles.suggestedAmt}>₹{profile.suggestedMonthlyAmount.toLocaleString('en-IN')}</p>
         </div>
       </div>
 
@@ -84,13 +130,13 @@ function GrowHome() {
         <div className={styles.aiRecCard}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
             <Sparkles size={18} color="rgba(255,255,255,0.8)" strokeWidth={1.75} />
-            <p className={styles.aiRecLabel}>AI RECOMMENDATIONS</p>
+            <p className={styles.aiRecLabel}>BASED ON YOUR DATA</p>
           </div>
           <h1 className={styles.aiRecTitle}>
             Based on your financial health
           </h1>
           <p className={styles.aiRecSub}>
-            Dekho analysed your income, expenses, savings, and goals to suggest these next steps.
+            Dekho looked at your income, expenses, savings and goals to suggest what to explore next — this is educational, not personalized investment advice.
           </p>
         </div>
       </div>
@@ -100,7 +146,7 @@ function GrowHome() {
       <div className={styles.px} style={{ marginTop: 'var(--space-5)' }}>
         <p className={styles.pathsTitle}>Your Next Steps</p>
         <div className={styles.recList}>
-          {RECS.map((rec, i) => (
+          {steps.map((rec, i) => (
             <button
               key={rec.id}
               className={styles.recCard}
@@ -134,18 +180,18 @@ function GrowHome() {
           className={styles.ctaBtn}
           onClick={() => navigate('/grow/recommendations')}
         >
-          Get Personalized recommendations by<br/>Dekho
+          Explore educational options
         </button>
-        <p className={styles.poweredBy}>POWERED BY GROWW BROKERAGE SERVICES</p>
+        <p className={styles.poweredBy}>{profile.disclaimer}</p>
       </div>
     </div>
   )
 }
 
-function ReadinessGuardrail() {
+function ReadinessGuardrail({ profile }: { profile: GrowProfile }) {
   const navigate = useNavigate()
-  const doneCount = READINESS_CHECKLIST.filter(c => c.done).length
-  const pct = Math.round((doneCount / READINESS_CHECKLIST.length) * 100)
+  const doneCount = profile.checklist.filter(c => c.done).length
+  const pct = Math.round((doneCount / profile.checklist.length) * 100)
 
   return (
     <div className={styles.page}>
@@ -153,6 +199,8 @@ function ReadinessGuardrail() {
         <p className={styles.pageTitle}>Grow</p>
         <div className={styles.avatarBtn}>AK</div>
       </div>
+
+      <div className={styles.px}><QuickLinks /></div>
 
       {/* Not ready card */}
       <div className={styles.px}>
@@ -165,7 +213,7 @@ function ReadinessGuardrail() {
           <div className={styles.guardrailTrack}>
             <div className={styles.guardrailFill} style={{ width: `${pct}%` }} />
           </div>
-          <p className={styles.guardrailPct}>{doneCount} of {READINESS_CHECKLIST.length} criteria met ({pct}%)</p>
+          <p className={styles.guardrailPct}>{doneCount} of {profile.checklist.length} criteria met ({pct}%)</p>
         </div>
       </div>
 
@@ -173,13 +221,16 @@ function ReadinessGuardrail() {
       <div className={styles.px}>
         <p className={styles.pathsTitle}>Your Readiness Checklist</p>
         <div className={styles.checkList}>
-          {READINESS_CHECKLIST.map((item, i) => (
-            <div key={i} className={`${styles.checkItem} ${item.done ? styles.checkDone : ''}`}>
+          {profile.checklist.map((item) => (
+            <div key={item.key} className={`${styles.checkItem} ${item.done ? styles.checkDone : ''}`}>
               {item.done
                 ? <CheckCircle2 size={18} color="var(--color-positive)" strokeWidth={1.75} />
                 : <div className={styles.checkCircle} />
               }
-              <p className={styles.checkLabel}>{item.label}</p>
+              <div>
+                <p className={styles.checkLabel}>{item.label}</p>
+                <p className={styles.recWhy} style={{ margin: 0 }}>{item.detail}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -190,12 +241,39 @@ function ReadinessGuardrail() {
         <button className={styles.ctaBtn} onClick={() => navigate('/budgets')}>
           Work on missing criteria →
         </button>
+        <p className={styles.poweredBy}>{profile.disclaimer}</p>
       </div>
     </div>
   )
 }
 
 export default function Grow() {
-  const { user } = useAppStore()
-  return user.isInvestmentEligible ? <GrowHome /> : <ReadinessGuardrail />
+  const [profile, setProfile] = useState<GrowProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    api.get<GrowProfile>('/api/v1/grow/profile')
+      .then(setProfile)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.px}><SkeletonCard /></div>
+      </div>
+    )
+  }
+
+  if (error || !profile) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.px}><ErrorState message={error ?? undefined} /></div>
+      </div>
+    )
+  }
+
+  return profile.isInvestmentEligible ? <GrowHome profile={profile} /> : <ReadinessGuardrail profile={profile} />
 }

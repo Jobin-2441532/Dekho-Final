@@ -14,6 +14,9 @@ class User(Base):
     risk_comfort = Column(String)
     monthly_budget = Column(Float)
     financial_stage = Column(String)
+    risk_tolerance = Column(String, nullable=True)     # self-reported: cautious | balanced | growth
+    risk_experience = Column(String, nullable=True)    # self-reported: new | some | experienced
+    goal_horizon_years = Column(Integer, nullable=True)  # self-reported time horizon for the risk check
     dekho_wallet_balance = Column(Float, default=0.0)
     created_at = Column(DateTime, server_default=func.now())
 
@@ -27,4 +30,6 @@ class User(Base):
     merchant_mappings = relationship("MerchantMapping", back_populates="user")
     feedback_logs = relationship("FeedbackLog", back_populates="user")
     chat_sessions = relationship("ChatSession", back_populates="user")
+    push_subscriptions = relationship("PushSubscription", back_populates="user")
+    support_feedback_entries = relationship("SupportFeedback", back_populates="user")
 

@@ -27,7 +27,6 @@ STATEMENT_META = {
     "Statement9": {
         "label":      "Statement 9",
         "salary":     "₹50,000 / month",
-        "date_range": "Apr – May 2026",
         "transactions": 64,
         "profile":    "Mid-income, Bangalore",
         "icon":       "🏙️",
@@ -36,7 +35,6 @@ STATEMENT_META = {
     "Statement10": {
         "label":      "Statement 10",
         "salary":     "₹52,000 / month",
-        "date_range": "Apr – May 2026",
         "transactions": 64,
         "profile":    "Upper-mid, Hyderabad",
         "icon":       "💼",
@@ -45,13 +43,30 @@ STATEMENT_META = {
     "Statement11": {
         "label":      "Statement 11",
         "salary":     "₹47,000 / month",
-        "date_range": "Apr – May 2026",
         "transactions": 64,
         "profile":    "Moderate spend, Chennai",
         "icon":       "🌊",
         "color":      "#47688B",
     },
 }
+
+
+def _compute_date_range(statement_id: str) -> str:
+    """Derive the display date range from the CSV's own first/last rows,
+    so it can never go stale independently of the data (unlike a hardcoded string)."""
+    csv_path = STATEMENTS_DIR / f"{statement_id}.csv"
+    try:
+        with open(csv_path, newline="", encoding="utf-8") as f:
+            rows = [row for row in csv.DictReader(f) if row.get("date")]
+        first_date = datetime.strptime(rows[0]["date"], "%Y-%m-%d")
+        last_date = datetime.strptime(rows[-1]["date"], "%Y-%m-%d")
+        first_day = str(int(first_date.strftime("%d")))  # portable leading-zero strip
+        last_day = str(int(last_date.strftime("%d")))
+        if first_date.strftime("%b %Y") == last_date.strftime("%b %Y"):
+            return f"{first_day} – {last_day} {last_date.strftime('%b %Y')}"
+        return f"{first_day} {first_date.strftime('%b')} – {last_day} {last_date.strftime('%b %Y')}"
+    except Exception:
+        return "Recent"
 
 # ── Category mapping from CSV → Dekho app categories ─────────────────────────
 CATEGORY_MAP: dict[str, tuple[str, str]] = {
@@ -140,7 +155,7 @@ class ImportRequest(BaseModel):
 def list_statements():
     """Return metadata for all available bank statements (used by login page)."""
     return [
-        {"id": k, **v}
+        {"id": k, "date_range": _compute_date_range(k), **v}
         for k, v in STATEMENT_META.items()
     ]
 

@@ -140,6 +140,15 @@ export default function Expenses() {
   
   // Dynamic outflow history
   const [outflowHistory, setOutflowHistory] = useState<{label: string, total: number, height: number}[]>([])
+  const [prevPeriodTotal, setPrevPeriodTotal] = useState(0)
+
+  // ── Filters: category, search, comparison, month/year scope ────────────────
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showCategoryPanel, setShowCategoryPanel] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const [showComparison, setShowComparison] = useState(false)
+  const [viewScope, setViewScope] = useState<'month' | 'year'>('month')
 
   const loadData = () => {
     setLoading(true)
@@ -160,11 +169,23 @@ export default function Expenses() {
   // Initial load
   useEffect(() => { loadData() }, [])
 
-  // ── Derived: all debit transactions for the selected month ─────────────────
+  // ── Derived: debit transactions for the selected scope + active filters ────
+  const selectedYear = selectedMonth.slice(0, 4)
   const transactions = allTransactions.filter(tx => {
-    const txMonth = tx.date ? String(tx.date).slice(0, 7) : ''
-    return txMonth === selectedMonth && tx.direction === 'debit'
+    const txDateStr = tx.date ? String(tx.date) : ''
+    const inScope = viewScope === 'year'
+      ? txDateStr.slice(0, 4) === selectedYear
+      : txDateStr.slice(0, 7) === selectedMonth
+    if (!inScope || tx.direction !== 'debit') return false
+    if (selectedCategories.length > 0 && !selectedCategories.includes(tx.category)) return false
+    if (searchQuery && !String(tx.merchant || '').toLowerCase().includes(searchQuery.toLowerCase())) return false
+    return true
   })
+
+  // ── All categories seen in the user's data, for the filter panel ───────────
+  const allCategories: string[] = Array.from(
+    new Set(allTransactions.map(tx => tx.category).filter(Boolean))
+  ).sort()
 
   // ── Available months from all transactions (newest first) ──────────────────
   const availableMonths: string[] = Array.from(
@@ -183,9 +204,31 @@ export default function Expenses() {
       String(tx.date || '').startsWith(selectedMonth) && tx.direction === 'debit'
     )
 
-    // Total spend
+    // Total spend — scoped to the whole year when "Yearly" is active, else the month
     const total = monthDebits.reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
-    setMonthTotal(total)
+    const yearDebits = allTransactions.filter(tx =>
+      String(tx.date || '').startsWith(selectedYear) && tx.direction === 'debit'
+    )
+    const yearTotal = yearDebits.reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
+    setMonthTotal(viewScope === 'year' ? yearTotal : total)
+
+    // Previous-period total, for the "vs Prev Period" comparison badge
+    const [selYearNum, selMonNum] = selectedMonth.split('-').map(Number)
+    if (viewScope === 'year') {
+      const prevYear = String(Number(selectedYear) - 1)
+      const prevTotal = allTransactions
+        .filter(tx => String(tx.date || '').startsWith(prevYear) && tx.direction === 'debit')
+        .reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
+      setPrevPeriodTotal(prevTotal)
+    } else {
+      let py = selYearNum, pm = selMonNum - 1
+      if (pm <= 0) { pm = 12; py -= 1 }
+      const prevMonthStr = `${py}-${String(pm).padStart(2, '0')}`
+      const prevTotal = allTransactions
+        .filter(tx => String(tx.date || '').startsWith(prevMonthStr) && tx.direction === 'debit')
+        .reduce((s: number, t: any) => s + (t.amount ?? 0), 0)
+      setPrevPeriodTotal(prevTotal)
+    }
 
     sessionStorage.setItem('dekho_selected_month', selectedMonth)
 
@@ -289,7 +332,7 @@ export default function Expenses() {
         .catch(() => {})
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, allTransactions])
+  }, [selectedMonth, allTransactions, viewScope])
 
 
   const handleCorrect = async () => {
@@ -320,6 +363,10 @@ export default function Expenses() {
       alert('Failed to delete')
     }
   }
+
+  const changePct = prevPeriodTotal > 0
+    ? Math.round(((monthTotal - prevPeriodTotal) / prevPeriodTotal) * 100)
+    : null
 
   const pieData = dashboardSummary?.category_breakdown?.slice(0, 8) || []
   const COMMITTED_CATEGORIES = ["Bills", "Subscriptions", "Loan EMI", "Utilities", "Insurance"]
@@ -361,23 +408,91 @@ export default function Expenses() {
               ))
             )}
           </select>
-          <button className={styles.iconBtn} aria-label="Search"><Search size={16} /></button>
-          <button className={styles.iconBtn} aria-label="Filter"><Filter size={16} /></button>
+          <button
+            className={styles.iconBtn}
+            aria-label="Search"
+            onClick={() => setShowSearch(v => !v)}
+            style={{ background: showSearch ? 'var(--bg-surface-highest)' : undefined }}
+          >
+            <Search size={16} />
+          </button>
+          <button
+            className={styles.iconBtn}
+            aria-label="Filter"
+            onClick={() => setShowCategoryPanel(v => !v)}
+            style={{ background: showCategoryPanel || selectedCategories.length > 0 ? 'var(--bg-surface-highest)' : undefined }}
+          >
+            <Filter size={16} />
+          </button>
         </div>
       </div>
+
+      {showSearch && (
+        <div className={styles.px}>
+          <input
+            autoFocus
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search by merchant…"
+            style={{
+              width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--color-outline)', background: 'var(--bg-card)',
+              color: 'var(--color-on-surface)', fontFamily: 'var(--font-body)', fontSize: '14px',
+            }}
+          />
+        </div>
+      )}
+
+      {showCategoryPanel && (
+        <div className={styles.px}>
+          <div style={{ background: 'var(--bg-card)', borderRadius: '16px', padding: '16px', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-headline)', fontWeight: 700, fontSize: '13px', color: 'var(--color-on-surface)' }}>Filter by category</span>
+              {selectedCategories.length > 0 && (
+                <button onClick={() => setSelectedCategories([])} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+                  Clear
+                </button>
+              )}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {allCategories.map(cat => {
+                const active = selectedCategories.includes(cat)
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategories(prev => active ? prev.filter(c => c !== cat) : [...prev, cat])}
+                    style={{
+                      padding: '6px 12px', borderRadius: 'var(--radius-full)',
+                      border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-outline)'}`,
+                      background: active ? 'var(--color-primary)' : 'transparent',
+                      color: active ? 'var(--color-on-primary)' : 'var(--color-on-surface-var)',
+                      fontSize: '12px', fontFamily: 'var(--font-body)', cursor: 'pointer',
+                    }}
+                  >
+                    {CATEGORY_EMOJI[cat] ?? '💰'} {cat}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Total Outflow Card ── */}
       <div className={styles.px}>
         <div className={styles.outflowCard}>
           <div className={styles.outflowHeader}>
             <span className={styles.outflowLabel}>TOTAL OUTFLOW</span>
-            <div className={styles.trendBadge}>
-              <span className={styles.trendIcon}>↗</span> 12% higher
-            </div>
+            {showComparison && changePct !== null && (
+              <div className={styles.trendBadge}>
+                <span className={styles.trendIcon}>{changePct >= 0 ? '↗' : '↘'}</span> {Math.abs(changePct)}% {changePct >= 0 ? 'higher' : 'lower'}
+              </div>
+            )}
           </div>
           <div className={styles.outflowAmounts}>
             <p className={styles.bigAmount}>₹{monthTotal.toLocaleString('en-IN')}</p>
-            <p className={styles.bigAmountSub}>Spent this month</p>
+            <p className={styles.bigAmountSub}>Spent this {viewScope === 'year' ? 'year' : 'month'}</p>
           </div>
           <div className={styles.barChart}>
             {outflowHistory.map((h, i) => (
@@ -622,10 +737,30 @@ export default function Expenses() {
         
         {/* Transaction Filters */}
         <div className={styles.scrollRow}>
-          <button className={`${styles.filterPill} ${styles.filterPillActive}`}>Month</button>
-          <button className={styles.filterPill}>By Category</button>
-          <button className={styles.filterPill}>vs Prev Period</button>
-          <button className={styles.filterPill}>Yearly</button>
+          <button
+            className={`${styles.filterPill} ${viewScope === 'month' ? styles.filterPillActive : ''}`}
+            onClick={() => setViewScope('month')}
+          >
+            Month
+          </button>
+          <button
+            className={`${styles.filterPill} ${selectedCategories.length > 0 ? styles.filterPillActive : ''}`}
+            onClick={() => setShowCategoryPanel(v => !v)}
+          >
+            By Category{selectedCategories.length > 0 ? ` (${selectedCategories.length})` : ''}
+          </button>
+          <button
+            className={`${styles.filterPill} ${showComparison ? styles.filterPillActive : ''}`}
+            onClick={() => setShowComparison(v => !v)}
+          >
+            vs Prev Period
+          </button>
+          <button
+            className={`${styles.filterPill} ${viewScope === 'year' ? styles.filterPillActive : ''}`}
+            onClick={() => setViewScope(v => v === 'year' ? 'month' : 'year')}
+          >
+            Yearly
+          </button>
         </div>
 
         <div className={styles.txList}>

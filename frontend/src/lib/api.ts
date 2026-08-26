@@ -29,6 +29,7 @@ function getToken(): string | null {
 export function logout(): void {
   localStorage.removeItem('dekho_token')
   localStorage.removeItem('dekho_onboarded')
+  sessionStorage.clear() // avoid leaking the previous user's cached data (e.g. Monthly Wrap) to whoever logs in next
   window.location.href = '/login'
 }
 

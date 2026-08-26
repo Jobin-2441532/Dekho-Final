@@ -12,7 +12,7 @@ const navItems = [
   { to: '/budgets',  icon: PiggyBank,   label: 'Budgets'  },
   { to: '/expenses', icon: Receipt,     label: 'Expenses' },
   { to: '/home',     icon: Home,        label: 'Home',    center: true },
-  { to: '/assets',   icon: Landmark,    label: 'Assets'   },
+  { to: '/assets',   icon: Landmark,    label: 'Wealth'   },
   { to: '/grow',     icon: TrendingUp,  label: 'Grow'     },
 ]
 
