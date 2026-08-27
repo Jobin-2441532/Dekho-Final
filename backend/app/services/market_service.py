@@ -10,11 +10,14 @@ TTL so we're not hammering either source, with a graceful fallback to the
 last-known-good snapshot (or an explicit "unavailable" state) if a live
 fetch fails.
 """
+import logging
 import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 import httpx
+
+logger = logging.getLogger("dekho.market")
 
 CACHE_TTL_SECONDS = 600  # 10 minutes
 
@@ -72,7 +75,8 @@ def _fetch_index_quote(client: httpx.Client, symbol: str, name: str) -> dict | N
             "asOf": as_of,
             "series": series,
         }
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Index quote fetch failed for {symbol}: {type(e).__name__}: {e}")
         return None
 
 
