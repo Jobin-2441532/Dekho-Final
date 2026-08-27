@@ -40,17 +40,28 @@ def _fetch_index_quote(client: httpx.Client, symbol: str, name: str) -> dict | N
     try:
         resp = client.get(
             f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
-            params={"interval": "1d", "range": "1d"},
+            # 15m/5d gives both the current snapshot (meta) and a reliable trend
+            # sparkline in one request — range=1d alone is too sparse once the
+            # market's closed for the day (as low as 1-2 points).
+            params={"interval": "15m", "range": "5d"},
             headers=HEADERS,
             timeout=5.0,
         )
         resp.raise_for_status()
-        meta = resp.json()["chart"]["result"][0]["meta"]
+        result = resp.json()["chart"]["result"][0]
+        meta = result["meta"]
         price = meta["regularMarketPrice"]
         prev_close = meta["chartPreviousClose"]
         change = price - prev_close
         change_pct = (change / prev_close * 100) if prev_close else 0
         as_of = datetime.fromtimestamp(meta["regularMarketTime"], tz=timezone.utc).isoformat()
+
+        closes = result.get("indicators", {}).get("quote", [{}])[0].get("close", [])
+        non_null = [round(c, 2) for c in closes if c is not None]
+        # Cap the sparkline payload — a stride sample is plenty for a trend line.
+        stride = max(1, len(non_null) // 60)
+        series = non_null[::stride]
+
         return {
             "symbol": symbol,
             "name": name,
@@ -58,6 +69,7 @@ def _fetch_index_quote(client: httpx.Client, symbol: str, name: str) -> dict | N
             "change": round(change, 2),
             "changePercent": round(change_pct, 2),
             "asOf": as_of,
+            "series": series,
         }
     except Exception:
         return None

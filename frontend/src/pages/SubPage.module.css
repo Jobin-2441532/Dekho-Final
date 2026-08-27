@@ -246,6 +246,7 @@
 .marketIndexChangePos { color: var(--color-positive); }
 .marketIndexChangeNeg { color: var(--color-negative); }
 .marketIndexAsOf { font-family: var(--font-body); font-size: 10px; color: var(--color-muted); margin-top: 4px; }
+.marketSparkline { width: 100%; height: 32px; margin-top: var(--space-2); display: block; }
 
 .staleBanner { background: var(--color-warning-bg); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); font-family: var(--font-body); font-size: var(--text-xs); color: var(--color-on-surface); }
 

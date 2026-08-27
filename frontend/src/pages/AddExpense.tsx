@@ -6,8 +6,19 @@ import { api } from '../lib/api'
 import { toast } from 'react-hot-toast'
 import styles from './AddExpense.module.css'
 
+const INCOME_CATEGORIES = [
+  { label: 'Salary', emoji: '💼' },
+  { label: 'Freelance', emoji: '💻' },
+  { label: 'Business', emoji: '🏢' },
+  { label: 'Interest', emoji: '🏦' },
+  { label: 'Refund', emoji: '↩️' },
+  { label: 'Gift', emoji: '🎁' },
+  { label: 'Other Income', emoji: '💰' },
+]
+
 export default function AddExpense() {
   const navigate = useNavigate()
+  const [txType, setTxType] = useState<'expense' | 'income'>('expense')
   const [amount, setAmount] = useState('0')
   const [account, setAccount] = useState('Select Account')
   const [category, setCategory] = useState('Select Category')
@@ -50,25 +61,28 @@ export default function AddExpense() {
     }
   }
 
+  const isIncome = txType === 'income'
+  const defaultCategory = isIncome ? 'Other Income' : 'Others'
+
   const handleSave = async () => {
     if (amount === '0' || amount === '') return
-    
+
     const savePromise = api.post('/api/v1/dashboard/transactions', {
       amount: parseFloat(amount),
       merchant: notes || category, // fallback to category if no notes
-      category: category === 'Select Category' ? 'Others' : category,
+      category: category === 'Select Category' ? defaultCategory : category,
       date: date, // Ideally should combine date and time for backend if supported
       notes: notes,
-      direction: 'debit',
+      direction: isIncome ? 'credit' : 'debit',
       payment_mode: account === 'Select Account' ? 'Cash' : account,
       source_type: 'Manual'
     })
 
     try {
       await toast.promise(savePromise, {
-        loading: 'Adding expense...',
-        success: 'Expense added!',
-        error: 'Failed to add expense'
+        loading: isIncome ? 'Adding income...' : 'Adding expense...',
+        success: isIncome ? 'Income added!' : 'Expense added!',
+        error: isIncome ? 'Failed to add income' : 'Failed to add expense'
       })
       navigate(-1) // go back
     } catch (err) {
@@ -82,18 +96,36 @@ export default function AddExpense() {
         <button className={styles.iconBtn} onClick={() => navigate(-1)}>
           <X size={24} />
         </button>
-        <h2 className={styles.title}>Add Expense</h2>
+        <h2 className={styles.title}>{isIncome ? 'Add Income' : 'Add Expense'}</h2>
         <button className={styles.iconBtn} onClick={handleSave}>
           <Check size={24} />
         </button>
       </header>
 
       <div className={styles.content}>
+        {/* Expense / Income toggle */}
+        <div className={styles.typeToggle}>
+          <button
+            type="button"
+            className={!isIncome ? styles.typeToggleBtnActive : styles.typeToggleBtn}
+            onClick={() => { setTxType('expense'); setCategory('Select Category') }}
+          >
+            Expense
+          </button>
+          <button
+            type="button"
+            className={isIncome ? styles.typeToggleBtnActiveIncome : styles.typeToggleBtn}
+            onClick={() => { setTxType('income'); setCategory('Select Category') }}
+          >
+            Income
+          </button>
+        </div>
+
         {/* Amount */}
         <div className={styles.amountContainer}>
           <span className={styles.amountLabel}>AMOUNT</span>
           <div className={styles.amountValueRow}>
-            <span className={styles.amountValue}>₹{amount}</span>
+            <span className={styles.amountValue} style={isIncome ? { color: 'var(--color-positive)' } : undefined}>₹{amount}</span>
             <div className={styles.calcIcon}>
               <Calculator size={18} />
             </div>
@@ -185,12 +217,12 @@ export default function AddExpense() {
 
         {/* Quick Add Categories */}
         <div className={styles.quickCategoriesRow}>
-          {[
+          {(isIncome ? INCOME_CATEGORIES.slice(0, 4) : [
             { label: 'Food & Dining', emoji: '🍽️' },
             { label: 'Transport', emoji: '🚗' },
             { label: 'Shopping', emoji: '🛍️' },
             { label: 'Bills', emoji: '🧾' },
-          ].map((qc) => (
+          ]).map((qc) => (
             <button
               key={qc.label}
               type="button"
@@ -276,7 +308,21 @@ export default function AddExpense() {
                 </div>
               )}
 
-              {activeSheet === 'category' && (
+              {activeSheet === 'category' && isIncome && (
+                <div className={styles.sheetList}>
+                  <div className={styles.sheetSubhead}>INCOME</div>
+                  {INCOME_CATEGORIES.map(ic => (
+                    <button key={ic.label} className={styles.sheetItem} onClick={() => { setCategory(ic.label); setActiveSheet(null); }}>
+                      {ic.emoji} {ic.label}
+                    </button>
+                  ))}
+                  <button className={styles.addCustomCategoryBtn} onClick={() => { setShowCustomCategory(true); setActiveSheet(null); }}>
+                    + Add Custom Category...
+                  </button>
+                </div>
+              )}
+
+              {activeSheet === 'category' && !isIncome && (
                 <div className={styles.sheetList}>
                   <div className={styles.sheetSubhead}>ESSENTIALS</div>
                   <button className={styles.sheetItem} onClick={() => { setCategory('Transport'); setActiveSheet(null); }}>

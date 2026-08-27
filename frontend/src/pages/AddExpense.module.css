@@ -52,6 +52,43 @@
   gap: 10px;
 }
 
+/* Expense / Income toggle */
+.typeToggle {
+  display: flex;
+  gap: 6px;
+  background-color: #EBE4DB;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.typeToggleBtn,
+.typeToggleBtnActive,
+.typeToggleBtnActiveIncome {
+  flex: 1;
+  border: none;
+  border-radius: 9px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.typeToggleBtn {
+  background-color: transparent;
+  color: #6b6058;
+}
+
+.typeToggleBtnActive {
+  background-color: #6B4C3A;
+  color: #FFF;
+}
+
+.typeToggleBtnActiveIncome {
+  background-color: var(--color-positive);
+  color: #FFF;
+}
+
 /* Amount Container */
 .amountContainer {
   background-color: #EBE4DB;

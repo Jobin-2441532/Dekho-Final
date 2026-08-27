@@ -15,6 +15,29 @@ interface IndexQuote {
   change: number
   changePercent: number
   asOf: string
+  series?: number[]
+}
+
+/* Lightweight inline-SVG trend line — no chart library needed for a single
+   polyline. Shows the last ~5 sessions' intraday movement per index. */
+function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
+  if (data.length < 2) return null
+  const min = Math.min(...data)
+  const max = Math.max(...data)
+  const range = max - min || 1
+  const w = 100, h = 32
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w
+    const y = h - ((v - min) / range) * h
+    return `${x},${y}`
+  }).join(' ')
+  const color = positive ? 'var(--color-positive)' : 'var(--color-negative)'
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" className={styles.marketSparkline} aria-hidden="true">
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
 }
 
 interface NewsItem {
@@ -98,6 +121,9 @@ export default function GrowMarket() {
                         {positive ? <TrendingUp size={12} style={{ verticalAlign: '-2px' }} /> : <TrendingDown size={12} style={{ verticalAlign: '-2px' }} />}
                         {' '}{positive ? '+' : ''}{idx.change.toLocaleString('en-IN')} ({positive ? '+' : ''}{idx.changePercent}%)
                       </p>
+                      {idx.series && idx.series.length > 1 && (
+                        <Sparkline data={idx.series} positive={positive} />
+                      )}
                       <p className={styles.marketIndexAsOf}>As of {formatAsOf(idx.asOf)}</p>
                     </div>
                   )
