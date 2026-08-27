@@ -40,10 +40,11 @@ def _fetch_index_quote(client: httpx.Client, symbol: str, name: str) -> dict | N
     try:
         resp = client.get(
             f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
-            # 15m/5d gives both the current snapshot (meta) and a reliable trend
-            # sparkline in one request — range=1d alone is too sparse once the
-            # market's closed for the day (as low as 1-2 points).
-            params={"interval": "15m", "range": "5d"},
+            # 1d/1mo gives both the current snapshot (meta) and a month of daily
+            # closes for a trend sparkline, in one request. Deliberately daily
+            # (not intraday) interval: indices return empty series for finer
+            # granularity on Yahoo's public endpoint even though 1d works fine.
+            params={"interval": "1d", "range": "1mo"},
             headers=HEADERS,
             timeout=5.0,
         )
